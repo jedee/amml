@@ -1,0 +1,15 @@
+{
+  "name": "amml",
+  "local_port": 54305,
+  "entrypoint": "bun run dev",
+  "publish": {
+    "label": "amml",
+    "type": "http",
+    "entrypoint": "bun run prod",
+    "published_port": 51004,
+    "env": {
+      "NODE_ENV": "production",
+      "ZO_CLIENT_IDENTITY_TOKEN": "none"
+    }
+  }
+}
