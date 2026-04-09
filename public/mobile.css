@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════
+   MOBILE NAVIGATION
+═══════════════════════════════════ */
+@media (max-width:900px){
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar{
+    position:fixed;top:0;left:-260px;width:260px;height:100vh;height:100dvh;
+    z-index:1001;transition:left .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:4px 0 20px rgba(0,0,0,.25);overflow-y:auto;
+    margin:0;
+  }
+  .sidebar.open{left:0}
+  .sidebar .nav-section:first-child{margin-top:60px}
+
+  /* Hamburger button visible on mobile */
+  .topbar-hamburger{display:flex!important}
+  .topbar-market-sel,.topbar-sep:last-of-type{display:none!important}
+
+  /* Overlay backdrop */
+  .sidebar-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+    z-index:1000;opacity:0;transition:opacity .3s;
+  }
+  .sidebar-overlay.open{display:block;opacity:1}
+
+  /* Main content full width */
+  .main{padding:14px}
+  .ph h2{font-size:18px}
+  .sg{grid-template-columns:1fr!important}
+  .kpigrid{grid-template-columns:repeat(2,1fr)!important}
+  .brief-grid{grid-template-columns:1fr 1fr}
+  .att-filter{flex-wrap:wrap;gap:8px}
+  .att-filter select,.att-filter input{flex:1 1 auto;min-width:120px}
+  .att-table,.att-table table{font-size:12px}
+  .card-h h3,.card-h h4{font-size:13px}
+  .modal{width:95vw!important;max-width:95vw!important;margin:2vh auto;max-height:96vh}
+  .mo{align-items:center;justify-content:center}
+  .cgrid2{grid-template-columns:1fr!important}
+  .icp-grid{grid-template-columns:1fr!important}
+  .ai-tabs{flex-wrap:wrap}
+  .ai-tab{padding:6px 12px;font-size:12px}
+  .ai-bubble{font-size:13px}
+  .tw,.tw table{font-size:12px}
+  .tw table tbody td,.tw table thead th{padding:6px 8px}
+}
+
+/* Landscape phones - two columns */
+@media (max-width:900px) and (orientation:landscape){
+  .kpigrid,.brief-grid{grid-template-columns:repeat(4,1fr)!important}
+}
+
+/* ── Hamburger button ── */
+.topbar-hamburger{
+  display:none;align-items:center;justify-content:center;
+  width:36px;height:36px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:7px;cursor:pointer;font-size:20px;line-height:1;
+  flex-shrink:0;padding:0;margin-left:4px;
+}
+.topbar-hamburger:hover{background:rgba(255,255,255,.14)}
+.topbar-hamburger:active{transform:scale(.95)}
+
+/* Sidebar overlay */
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none}
+.sidebar-overlay.open{display:block}

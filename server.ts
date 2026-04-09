@@ -4,17 +4,39 @@ import { createServer as createViteServer } from "vite";
 import config from "./zosite.json";
 import { Hono } from "hono";
 
-// AI agents: read README.md for navigation and contribution guidance.
 type Mode = "development" | "production";
 const app = new Hono();
 
 const mode: Mode =
   process.env.NODE_ENV === "production" ? "production" : "development";
 
-/**
- * Add any API routes here.
- */
-app.get("/api/hello-zo", (c) => c.json({ msg: "Hello from Zo" }));
+async function serveAMML(c: any) {
+  // In production, always read from public/ so we get the latest without rebuilding
+  const base = mode === "production" ? "./public" : ".";
+  const file = Bun.file(`${base}/amml.html`);
+  if (await file.exists()) {
+    return new Response(file, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, must-revalidate, max-age=0",
+      },
+    });
+  }
+  // Fallback to dist in dev
+  const fallback = Bun.file(`./dist/amml.html`);
+  if (await fallback.exists()) {
+    return new Response(fallback, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, must-revalidate, max-age=0",
+      },
+    });
+  }
+  return c.text("AMML app not found", 404);
+}
+
+app.get("/app", serveAMML);
+app.get("/app/*", serveAMML);
 
 if (mode === "production") {
   configureProduction(app);
@@ -22,11 +44,6 @@ if (mode === "production") {
   await configureDevelopment(app);
 }
 
-/**
- * Determine port based on mode. In production, use the published_port if available.
- * In development, always use the local_port.
- * Ports are managed by the system and injected via the PORT environment variable.
- */
 const port = process.env.PORT
   ? parseInt(process.env.PORT, 10)
   : mode === "production"
@@ -35,41 +52,22 @@ const port = process.env.PORT
 
 export default { fetch: app.fetch, port, idleTimeout: 255 };
 
-/**
- * Configure routing for production builds.
- *
- * - Streams prebuilt assets from `dist`.
- * - Static files from `public/` are copied to `dist/` by Vite and served at root paths.
- * - Falls back to `index.html` for any other GET so the SPA router can resolve the request.
- */
 function configureProduction(app: Hono) {
   app.use("/assets/*", serveStatic({ root: "./dist" }));
   app.get("/favicon.ico", (c) => c.redirect("/favicon.svg", 302));
   app.use(async (c, next) => {
     if (c.req.method !== "GET") return next();
-
     const path = c.req.path;
     if (path.startsWith("/api/") || path.startsWith("/assets/")) return next();
-
-    const file = Bun.file(`./dist${path}`);
-    if (await file.exists()) {
-      const stat = await file.stat();
-      if (stat && !stat.isDirectory()) {
-        return new Response(file);
-      }
+    const pub = Bun.file(`./public${path}`);
+    if (await pub.exists()) {
+      const stat = await pub.stat();
+      if (stat && !stat.isDirectory()) return new Response(pub);
     }
-
-    return serveStatic({ path: "./dist/index.html" })(c, next);
+    return serveAMML(c);
   });
 }
 
-/**
- * Configure routing for development builds.
- *
- * - Boots Vite in middleware mode for transforms.
- * - Static files from `public/` are served at root paths (matching Vite convention).
- * - Mirrors production routing semantics so SPA routes behave consistently.
- */
 async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
   const vite = await createViteServer({
     server: { middlewareMode: true, hmr: false, ws: false },
@@ -81,51 +79,38 @@ async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
     if (c.req.path === "/favicon.ico") return c.redirect("/favicon.svg", 302);
 
     const url = c.req.path;
-    try {
-      if (url === "/" || url === "/index.html") {
-        let template = await Bun.file("./index.html").text();
-        template = await vite.transformIndexHtml(url, template);
-        return c.html(template, {
-          headers: { "Cache-Control": "no-store, must-revalidate" },
+    if (url === "/" || url === "/index.html") {
+      const pub = Bun.file("./public/index.html");
+      if (await pub.exists()) {
+        return new Response(pub, {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       }
-
-      const publicFile = Bun.file(`./public${url}`);
-      if (await publicFile.exists()) {
-        const stat = await publicFile.stat();
-        if (stat && !stat.isDirectory()) {
-          return new Response(publicFile, {
-            headers: { "Cache-Control": "no-store, must-revalidate" },
-          });
-        }
-      }
-
-      let result;
-      try {
-        result = await vite.transformRequest(url);
-      } catch {
-        result = null;
-      }
-
-      if (result) {
-        return new Response(result.code, {
-          headers: {
-            "Content-Type": "application/javascript",
-            "Cache-Control": "no-store, must-revalidate",
-          },
-        });
-      }
-
       let template = await Bun.file("./index.html").text();
-      template = await vite.transformIndexHtml("/", template);
+      template = await vite.transformIndexHtml(url, template);
       return c.html(template, {
         headers: { "Cache-Control": "no-store, must-revalidate" },
       });
-    } catch (error) {
-      vite.ssrFixStacktrace(error as Error);
-      console.error(error);
-      return c.text("Internal Server Error", 500);
     }
+
+    const publicFile = Bun.file(`./public${url}`);
+    if (await publicFile.exists()) {
+      const stat = await publicFile.stat();
+      if (stat && !stat.isDirectory()) return new Response(publicFile);
+    }
+
+    let result;
+    try { result = await vite.transformRequest(url); } catch { result = null; }
+    if (result) {
+      return new Response(result.code, {
+        headers: {
+          "Content-Type": "application/javascript",
+          "Cache-Control": "no-store, must-revalidate",
+        },
+      });
+    }
+
+    return serveAMML(c);
   });
 
   return vite;
