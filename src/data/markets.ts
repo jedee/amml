@@ -5,6 +5,7 @@
 import type { Market } from '../types/models';
 
 export const MARKETS: Market[] = [
+  { id: 'm0',  name: 'Head Office',                         location: 'FCT Administration HQ',             manager: 'Onya Ojiji',              capacity: 50,  days: 'Mon–Fri', active: true,  desc: 'FCT Administration Headquarters' },
   { id: 'm1',  name: 'Gudu Market',                         location: 'Gudu, FCT Abuja',                  manager: 'Chibuzor Udekwu',         capacity: 150, days: 'Mon–Sat', active: true,  desc: 'Busy residential market serving Gudu and environs' },
   { id: 'm2',  name: 'Wuse Market',                         location: 'Wuse Zone 5, FCT Abuja',           manager: 'Tolani Ofulue',           capacity: 200, days: 'Mon–Sat', active: true,  desc: 'One of the largest markets in central Abuja' },
   { id: 'm3',  name: 'Kado Market',                         location: 'Kado, FCT Abuja',                   manager: 'Daodu Susan',             capacity: 120, days: 'Mon–Sat', active: true,  desc: 'Vibrant market serving Kado Estate and surroundings' },
