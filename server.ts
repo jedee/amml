@@ -59,6 +59,15 @@ function configureProduction(app: Hono) {
     if (c.req.method !== "GET") return next();
     const path = c.req.path;
     if (path.startsWith("/api/") || path.startsWith("/assets/")) return next();
+    // Serve React app at root
+    if (path === "/" || path === "") {
+      const distIndex = Bun.file("./dist/index.html");
+      if (await distIndex.exists()) {
+        return new Response(distIndex, {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+    }
     const pub = Bun.file(`./public${path}`);
     if (await pub.exists()) {
       const stat = await pub.stat();

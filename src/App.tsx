@@ -2,8 +2,8 @@
 //  AMML — Main Application Shell
 // ─────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
-import { AppProvider } from './contexts/AppContext';
+import React, { useState, useEffect } from 'react';
+import { AppProvider, useApp } from './contexts/AppContext';
 import { SplashScreen, LoginScreen } from './components/SplashLogin';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
@@ -30,17 +30,29 @@ const PAGES: Record<string, React.ComponentType> = {
 function AppShell() {
   const [phase, setPhase] = useState<Phase>('splash');
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const { state } = useApp();
 
+  // Auto-advance from login → app once user logs in
+  useEffect(() => {
+    if (phase === 'login' && state.user) {
+      setPhase('app');
+    }
+  }, [state.user, phase]);
+
+  // phase: 'splash' → animated logo, 'login' → login form, 'app' → application
+  // state.user from context controls whether we're truly logged in
   if (phase === 'splash') {
     return <SplashScreen onDone={() => setPhase('login')} />;
   }
 
+  // phase is 'login' or 'app' — state.user from context determines actual auth state
+  // (dispatch LOGIN from LoginScreen sets state.user, which triggers re-render here)
   if (phase === 'login') {
     return <LoginScreen />;
   }
 
-  // App phase — show app once user is logged in (detected via CSS class on #app)
-  // We use a wrapper div and show the app via the 'visible' class
+  // phase === 'app' — state.user is set when LOGIN action was dispatched
+  // state.user comes from context so this re-renders when login succeeds
   return (
     <div
       id="app"
@@ -53,8 +65,7 @@ function AppShell() {
         <main className="main">
           {PAGES[currentPage]
             ? React.createElement(PAGES[currentPage])
-            : React.createElement(Dashboard)
-          }
+            : <div style={{ color: 'var(--text3)', padding: 20 }}>Coming soon: {currentPage}</div>}
         </main>
       </div>
     </div>

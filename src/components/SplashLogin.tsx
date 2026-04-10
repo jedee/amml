@@ -48,12 +48,12 @@ export function SplashScreen({ onDone }: Props) {
           <text
             className="logo-text-tagline"
             x="110" y="100"
-            text-anchor="middle"
+            textAnchor="middle"
             fill="white"
-            font-size="9"
-            font-weight="700"
-            font-family="Outfit,sans-serif"
-            letter-spacing="2"
+            fontSize="9"
+            fontWeight="700"
+            fontFamily="Outfit,sans-serif"
+            letterSpacing="2"
           >
             WE DELIVER VALUE
           </text>
@@ -61,12 +61,12 @@ export function SplashScreen({ onDone }: Props) {
           <text
             className="logo-text-main"
             x="110" y="145"
-            text-anchor="middle"
+            textAnchor="middle"
             fill="var(--navy)"
-            font-size="13"
-            font-weight="800"
-            font-family="Outfit,sans-serif"
-            letter-spacing="3"
+            fontSize="13"
+            fontWeight="800"
+            fontFamily="Outfit,sans-serif"
+            letterSpacing="3"
           >
             ABUJA MARKETS
           </text>
@@ -122,8 +122,8 @@ export function LoginScreen() {
             <polygon points="10,10 100,10 60,80" fill="var(--blue)" />
             <polygon points="100,10 190,10 130,80" fill="var(--orange)" />
             <rect x="10" y="85" width="180" height="22" rx="4" fill="var(--green-logo)" />
-            <text x="110" y="100" text-anchor="middle" fill="white" font-size="9" font-weight="700" font-family="Outfit,sans-serif" letter-spacing="2">WE DELIVER VALUE</text>
-            <text x="110" y="145" text-anchor="middle" fill="var(--navy)" font-size="13" font-weight="800" font-family="Outfit,sans-serif" letter-spacing="3">ABUJA MARKETS</text>
+            <text x="110" y="100" textAnchor="middle" fill="white" fontSize="9" fontWeight="700" fontFamily="Outfit,sans-serif" letterSpacing="2">WE DELIVER VALUE</text>
+            <text x="110" y="145" textAnchor="middle" fill="var(--navy)" fontSize="13" fontWeight="800" fontFamily="Outfit,sans-serif" letterSpacing="3">ABUJA MARKETS</text>
           </svg>
         </div>
 
@@ -140,6 +140,7 @@ export function LoginScreen() {
             placeholder="e.g. AMML-001"
             value={staffId}
             onChange={e => setStaffId(e.target.value)}
+            onInput={e => setStaffId((e.target as HTMLInputElement).value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
           />
         </div>
