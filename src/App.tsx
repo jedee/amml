@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import AttendancePage from './pages/AttendancePage';
 import MarketsPage from './pages/MarketsPage';
 import StaffPage from './pages/StaffPage';
+import UsersPage from './pages/UsersPage';
 import './styles/app.css';
 
 // ── Screen phases ────────────────────────────────────────────
@@ -22,6 +23,7 @@ const PAGES: Record<string, React.ComponentType> = {
   attendance: AttendancePage,
   markets:    MarketsPage,
   staff:      StaffPage,
+  users:      UsersPage,
   // Add more pages here as they are migrated
 };
 

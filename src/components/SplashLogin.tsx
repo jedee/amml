@@ -80,25 +80,15 @@ export function SplashScreen({ onDone }: Props) {
 
 // ── Login Screen ────────────────────────────────────────────
 
-const LEVELS = [
-  { key: 'SUPERADMIN', icon: '👑', name: 'Super Admin',  desc: 'Full system access', color: '#4A148C', rank: 'LEVEL 1' },
-  { key: 'MD',          icon: '🎩', name: 'Managing Director', desc: 'Executive access', color: '#003C78', rank: 'LEVEL 2' },
-  { key: 'MANAGER',     icon: '📊', name: 'Operations Manager', desc: 'Market management', color: '#0064B4', rank: 'LEVEL 3' },
-  { key: 'SUPERVISOR',  icon: '🏪', name: 'Market Supervisor', desc: 'Assigned market', color: '#DC6400', rank: 'LEVEL 4' },
-  { key: 'OFFICER',     icon: '🕐', name: 'Market Officer', desc: 'Clock in/out only', color: '#288C28', rank: 'LEVEL 5' },
-] as const;
-
 export function LoginScreen() {
   const { dispatch } = useApp();
-  const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [staffId, setStaffId] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = () => {
-    if (!selectedLevel) { setError('Please select a role.'); return; }
     if (!staffId.trim()) { setError('Please enter your Staff ID.'); return; }
 
-    // Find staff member by ID (case-insensitive prefix match)
+    // Find staff member — exact match or prefix (case-insensitive)
     const match = STAFF.find(s =>
       s.id.toLowerCase() === staffId.trim().toLowerCase() ||
       s.id.toLowerCase().startsWith(staffId.trim().toLowerCase())
@@ -109,15 +99,16 @@ export function LoginScreen() {
       return;
     }
 
-    const levelConfig = ROLE_CONFIG[selectedLevel as keyof typeof ROLE_CONFIG];
+    // Auth level is set on the staff record — no role picker needed
     const user = {
       id: match.id,
       name: `${match.first} ${match.last}`,
       staffId: match.id,
-      authLevel: selectedLevel as any,
+      authLevel: match.authLevel,
       market: match.market,
     };
 
+    const levelConfig = ROLE_CONFIG[match.authLevel];
     dispatch({ type: 'LOGIN', payload: user });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'LOGIN', detail: `Logged in as ${levelConfig.label}` } });
   };
@@ -139,29 +130,6 @@ export function LoginScreen() {
         <div className="login-divider" />
         <div className="login-title">Welcome Back</div>
         <div className="login-sub">Sign in to your AMML account</div>
-
-        {/* Level selector */}
-        <div className="level-grid">
-          {LEVELS.map(l => (
-            <button
-              key={l.key}
-              className={`level-btn ${selectedLevel === l.key ? 'active' : ''}`}
-              onClick={() => setSelectedLevel(l.key)}
-              type="button"
-            >
-              <div className="level-icon" style={{ background: `${l.color}22`, color: l.color }}>
-                {l.icon}
-              </div>
-              <div className="level-meta">
-                <div className="level-name">{l.name}</div>
-                <div className="level-desc">{l.desc}</div>
-              </div>
-              <span className="level-rank" style={{ background: `${l.color}22`, color: l.color }}>
-                {l.rank}
-              </span>
-            </button>
-          ))}
-        </div>
 
         {/* Staff ID input */}
         <div className="login-input-group">

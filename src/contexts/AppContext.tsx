@@ -59,6 +59,7 @@ type Action =
   | { type: 'SET_MKT_FILTER'; payload: string }
   | { type: 'ADD_STAFF'; payload: Staff }
   | { type: 'UPDATE_STAFF'; payload: Staff }
+  | { type: 'UPDATE_STAFF_AUTH'; payload: { staffId: string; authLevel: AuthLevel } }
   | { type: 'DELETE_STAFF'; payload: string }
   | { type: 'ADD_DEVICE'; payload: Device }
   | { type: 'UPDATE_DEVICE'; payload: Device }
@@ -105,6 +106,16 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         staff: state.staff.map(s => s.id === action.payload.id ? action.payload : s),
+      };
+
+    case 'UPDATE_STAFF_AUTH':
+      return {
+        ...state,
+        staff: state.staff.map(s =>
+          s.id === action.payload.staffId
+            ? { ...s, authLevel: action.payload.authLevel }
+            : s
+        ),
       };
     case 'DELETE_STAFF':
       return { ...state, staff: state.staff.filter(s => s.id !== action.payload) };
