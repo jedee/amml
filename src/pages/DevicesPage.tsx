@@ -98,11 +98,10 @@ function BiometricImport() {
   const [zkPreview, setZkPreview] = useState<ZKRec[]>([]);
   const [zkDev, setZkDev] = useState('ZKTeco AL325');
   const [zkMkt, setZkMkt] = useState('');
-  const [zkMap, setZkMap] = useState<Record<string,string>>({});
   const [btFile, setBtFile] = useState<File|null>(null);
   const [btPreview, setBtPreview] = useState<BTRec[]>([]);
   const [btDev, setBtDev] = useState('Bantech AL321');
-  const { markets, staff, att } = state;
+  const { markets, staff, att, zkMap } = state;
   function onZKChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
     setZkFile(file);
@@ -211,6 +210,80 @@ function BiometricImport() {
           )}
         </div>
       )}
+      <div style={{ marginTop: 14, borderTop: '1.5px solid var(--border)', paddingTop: 14 }}>
+        <button onClick={() => setOpen(!open)} style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', background: open ? 'var(--surface3)' : 'var(--surface2)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: 'var(--text2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>🔗 ZK ID → AMML ID Mapping ({entries.length} entries)</span>
+          <span>{open ? '▲' : '▼'}</span>
+        </button>
+        {open && (
+          <div style={{ marginTop: 12 }}>
+            {entries.length > 0 && (
+              <div style={{ marginBottom: 12, overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface2)' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--text3)' }}>ZK ID</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--text3)' }}>AMML ID</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--text3)' }}>Matched Staff</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--text3)' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map(([zk, amml]) => {
+                      const sf = staff.find(s => s.id === amml);
+                      return (
+                        <tr key={zk} style={{ borderTop: '1px solid var(--border)' }}>
+                          <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 600 }}>{zk}</td>
+                          <td style={{ padding: '6px 10px', fontFamily: 'monospace' }}>{amml}</td>
+                          <td style={{ padding: '6px 10px', color: sf ? 'var(--green-logo)' : 'var(--orange)', fontSize: 11 }}>
+                            {sf ? `${sf.first} ${sf.last}` : <span style={{ fontStyle: 'italic' }}>unrecognized</span>}
+                          </td>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            {editKey === zk ? (
+                              <>
+                                <input value={editVal} onChange={e => setEditVal(e.target.value.toUpperCase())}
+                                  placeholder="AMML-001" maxLength={9}
+                                  style={{ padding: '3px 8px', borderRadius: 6, border: '1.5px solid var(--border)', fontFamily: 'monospace', fontSize: 11, width: 100 }} />
+                                <button onClick={() => save(zk, editVal)} style={{ padding: '3px 8px', borderRadius: 6, border: 'none', background: 'var(--green-logo)', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>Save</button>
+                                <button onClick={() => { setEditKey(''); setEditVal(''); }} style={{ padding: '3px 8px', borderRadius: 6, border: '1.5px solid var(--border)', background: 'var(--surface2)', fontSize: 11, cursor: 'pointer' }}>✕</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => { setEditKey(zk); setEditVal(amml); }} style={{ padding: '3px 8px', borderRadius: 6, border: '1.5px solid var(--border)', background: 'var(--surface2)', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                {delConfirm === zk ? (
+                                  <>
+                                    <button onClick={() => del(zk)} style={{ padding: '3px 8px', borderRadius: 6, border: 'none', background: '#C0392B', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>Confirm</button>
+                                    <button onClick={() => setDelConfirm('')} style={{ padding: '3px 8px', borderRadius: 6, border: '1.5px solid var(--border)', background: 'var(--surface2)', fontSize: 11, cursor: 'pointer' }}>✕</button>
+                                  </>
+                                ) : (
+                                  <button onClick={() => setDelConfirm(zk)} style={{ padding: '3px 8px', borderRadius: 6, border: '1.5px solid #C0392B', background: 'transparent', color: '#C0392B', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>Delete</button>
+                                )}
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {/* Add new mapping */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>Add mapping:</span>
+              <input value={addZk} onChange={e => setAddZk(e.target.value)} placeholder="ZK ID (from device)"
+                style={{ padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontFamily: 'monospace', fontSize: 12, width: 140 }} />
+              <span style={{ fontSize: 12, color: 'var(--text3)' }}>→</span>
+              <input value={addAmml} onChange={e => setAddAmml(e.target.value.toUpperCase())} placeholder="AMML ID"
+                maxLength={9} style={{ padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontFamily: 'monospace', fontSize: 12, width: 120 }} />
+              <button onClick={() => { if (addZk.trim() && addAmml.trim()) { save(addZk.trim(), addAmml.trim()); setAddZk(''); setAddAmml(''); } }}
+                style={{ padding: '5px 14px', borderRadius: 'var(--r-sm)', border: 'none', background: 'var(--blue)', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
+                Add
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

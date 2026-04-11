@@ -200,9 +200,186 @@ function AddStaffModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Edit-Staff Modal ─────────────────────────────────────────
+function EditStaffModal({ staff, onClose }: { staff: Staff; onClose: () => void }) {
+  const { state, dispatch } = useApp();
+
+  const [form, setForm] = useState<StaffFormData>({
+    id: staff.id,
+    first: staff.first,
+    last: staff.last,
+    dept: staff.dept,
+    market: staff.market,
+    phone: staff.phone,
+    role: staff.role,
+    salary: staff.salary ? staff.salary.toString() : '',
+    authLevel: staff.authLevel,
+    active: staff.active,
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof StaffFormData, string>>>({});
+
+  const set = (field: keyof StaffFormData, value: string | boolean) =>
+    setForm(f => ({ ...f, [field]: value }));
+
+  const validate = (): boolean => {
+    const errs: typeof errors = {};
+    const idRaw = form.id.trim().toUpperCase().replace(/\s+/g, '');
+    if (!idRaw) errs.id = 'AMML ID is required';
+    else if (!/^AMML-\d{3}$/.test(idRaw)) errs.id = 'Format must be AMML-001';
+    else if (state.staff.some(s => s.id === idRaw && s.id !== staff.id)) errs.id = 'This ID already exists';
+    if (!form.first.trim()) errs.first = 'Required';
+    if (!form.last.trim()) errs.last = 'Required';
+    if (!form.dept) errs.dept = 'Required';
+    if (!form.market) errs.market = 'Required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const id = form.id.trim().toUpperCase().replace(/\s+/g, '');
+    const staff: Staff = {
+      id,
+      first: form.first.trim(),
+      last: form.last.trim(),
+      dept: form.dept,
+      market: form.market,
+      phone: form.phone.replace(/\D/g, ''),
+      role: form.role.trim(),
+      salary: form.salary ? parseFloat(form.salary) : 0,
+      authLevel: form.authLevel,
+      active: form.active,
+    };
+    dispatch({ type: 'UPDATE_STAFF', payload: staff });
+    dispatch({ type: 'AUDIT_LOG', payload: { action: 'UPDATE', detail: `Staff ${id} (${staff.first} ${staff.last}) updated` } });
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,.45)',
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)',
+        width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto',
+        boxShadow: '0 24px 60px rgba(0,0,0,.3)',
+      }}>
+        {/* Modal Header */}
+        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>👤 Edit Staff</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>Update details for {staff.first} {staff.last}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text3)', padding: 4, lineHeight: 1 }}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* ID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>AMML ID *</label>
+                <input className="search-input" value={form.id} onChange={e => set('id', e.target.value.toUpperCase())}
+                  placeholder="AMML-001" maxLength={9}
+                  style={{ fontFamily: 'monospace', fontSize: 13, padding: '7px 10px' }} />
+                {errors.id && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.id}</span>}
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Auth Level *</label>
+                <select className="search-input" value={form.authLevel} onChange={e => set('authLevel', e.target.value as AuthLevel)}
+                  style={{ padding: '7px 10px', cursor: 'pointer' }}>
+                  {AUTH_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Name */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>First Name *</label>
+                <input className="search-input" value={form.first} onChange={e => set('first', e.target.value)}
+                  placeholder="Chibuzor" style={{ padding: '7px 10px' }} />
+                {errors.first && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.first}</span>}
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Last Name *</label>
+                <input className="search-input" value={form.last} onChange={e => set('last', e.target.value)}
+                  placeholder="Udekwu" style={{ padding: '7px 10px' }} />
+                {errors.last && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.last}</span>}
+              </div>
+            </div>
+
+            {/* Dept + Market */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Department *</label>
+                <select className="search-input" value={form.dept} onChange={e => set('dept', e.target.value)}
+                  style={{ padding: '7px 10px', cursor: 'pointer' }}>
+                  <option value="">Select department</option>
+                  {DEPT_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                {errors.dept && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.dept}</span>}
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Market *</label>
+                <select className="search-input" value={form.market} onChange={e => set('market', e.target.value)}
+                  style={{ padding: '7px 10px', cursor: 'pointer' }}>
+                  <option value="">Select market</option>
+                  {state.markets.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                </select>
+                {errors.market && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.market}</span>}
+              </div>
+            </div>
+
+            {/* Role + Phone */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Role / Title</label>
+                <input className="search-input" value={form.role} onChange={e => set('role', e.target.value)}
+                  placeholder="Market Officer" style={{ padding: '7px 10px' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Phone</label>
+                <input className="search-input" value={form.phone} onChange={e => set('phone', e.target.value)}
+                  placeholder="08034561234" style={{ padding: '7px 10px', fontFamily: 'monospace' }} />
+              </div>
+            </div>
+
+            {/* Salary */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Monthly Salary (₦)</label>
+              <input className="search-input" type="number" value={form.salary} onChange={e => set('salary', e.target.value)}
+                placeholder="85000" min="0" step="1000" style={{ padding: '7px 10px', fontFamily: 'monospace' }} />
+            </div>
+
+            {/* Active toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Active</span>
+              </label>
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>Inactive staff cannot log in</span>
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-blue">✅ Update Staff</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Main StaffPage ──────────────────────────────────────────
 export default function StaffPage() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const { staff, markets } = state;
   const { readFile, preview, error, confirmImport, cancelImport } = useStaffImport();
 
@@ -211,6 +388,8 @@ export default function StaffPage() {
   const [levelFilter, setLevelFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'table' | 'import'>('table');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editTarget, setEditTarget] = useState<Staff | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string>('');
 
   const filtered = useMemo(() => {
     return staff.filter(s => {
@@ -408,6 +587,7 @@ export default function StaffPage() {
                       <th>Salary</th>
                       <th>Auth Level</th>
                       <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -429,6 +609,25 @@ export default function StaffPage() {
                             {s.active ? '● Active' : 'Inactive'}
                           </span>
                         </td>
+                        <td>
+                          {deleteConfirm === s.id ? (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button className="btn btn-sm" style={{ background: '#C0392B', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 700 }}
+                                onClick={() => { dispatch({ type: 'DELETE_STAFF', payload: s.id }); dispatch({ type: 'AUDIT_LOG', payload: { action: 'DELETE', detail: `Staff ${s.id} (${s.first} ${s.last}) removed` } }); setDeleteConfirm(''); }}>
+                                Confirm
+                              </button>
+                              <button className="btn btn-sm btn-outline" style={{ padding: '4px 10px', fontSize: 11 }}
+                                onClick={() => setDeleteConfirm('')}>Cancel</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button className="btn btn-sm btn-outline" style={{ padding: '4px 10px', fontSize: 11 }}
+                                onClick={() => setEditTarget(s)}>Edit</button>
+                              <button className="btn btn-sm" style={{ padding: '4px 10px', fontSize: 11, background: 'transparent', color: '#C0392B', border: '1.5px solid #C0392B', borderRadius: 6, cursor: 'pointer', fontWeight: 700 }}
+                                onClick={() => setDeleteConfirm(s.id)}>Delete</button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -440,6 +639,7 @@ export default function StaffPage() {
       )}
 
       {showAddModal && <AddStaffModal onClose={() => setShowAddModal(false)} />}
+      {editTarget && <EditStaffModal staff={editTarget} onClose={() => setEditTarget(null)} />}
     </div>
   );
 }
