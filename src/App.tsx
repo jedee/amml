@@ -37,7 +37,7 @@ function AppShell() {
   // Auto-advance: splash → login after splash timer (LoginScreen calls onDone)
   // Auto-advance: login → app when user logs in (state.user is set by LOGIN action)
   if (state.phase === 'splash') {
-    return <SplashScreen onDone={() => {}} />;
+    return <SplashScreen onDone={() => dispatch({ type: 'GO_TO_LOGIN' })} />;
   }
 
   if (state.phase === 'login' || !state.user) {
