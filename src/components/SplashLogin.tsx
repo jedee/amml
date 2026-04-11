@@ -1,10 +1,19 @@
 // ─────────────────────────────────────────────────────────────
 //  AMML — Splash + Login Screens
 // ─────────────────────────────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 
 export function SplashScreen() {
+  const { dispatch } = useApp();
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      dispatch({ type: 'GO_TO_LOGIN' });
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [dispatch]);
+
   return (
     <div id="splash">
       <div className="splash-logo-wrap">
@@ -38,33 +47,56 @@ export function LoginScreen() {
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'LOGIN', detail: 'Staff ID ' + match.id + ' signed in' } });
   };
 
+  const hasPassword = state.staff.find(s =>
+    s.id.toLowerCase() === staffId.trim().toLowerCase() ||
+    s.id.toLowerCase().startsWith(staffId.trim().toLowerCase())
+  )?.password;
+
   return (
     <div id="loginScreen">
       <div className="login-card">
-        <img src="/images/ammllogo.png" alt="AMML" className="login-logo" />
+        <div className="login-logo-wrap">
+          <img src="/images/ammllogo.png" alt="AMML" className="login-logo" />
+        </div>
         <div className="login-divider" />
         <div className="login-title">Welcome Back</div>
-        <div className="login-sub">Sign in to Abuja Markets Management</div>
+        <div className="login-sub">Sign in to Abuja Markets Management Limited</div>
+
         <div className="login-input-group">
           <label className="login-label">Staff ID</label>
-          <input className="login-input" type="text" placeholder="e.g. AMML-001"
-            value={staffId} onChange={e => { setStaffId(e.target.value); setError(''); }}
+          <input
+            className="login-input"
+            type="text"
+            placeholder="e.g. AMML-001"
+            value={staffId}
+            onChange={e => { setStaffId(e.target.value); setError(''); }}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            autoComplete="username" autoFocus />
+            autoComplete="username"
+            autoFocus
+          />
         </div>
-        {(state.staff.find(s => s.id.toLowerCase() === staffId.trim().toLowerCase() || s.id.toLowerCase().startsWith(staffId.trim().toLowerCase()))?.password) && (
+
+        {hasPassword && (
           <div className="login-input-group">
             <label className="login-label">Password</label>
-            <input className="login-input" type="password" placeholder="Enter your password"
-              value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
+            <input
+              className="login-input"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(''); }}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              autoComplete="current-password" />
+              autoComplete="current-password"
+            />
           </div>
         )}
+
         {error && <div className="login-error">{error}</div>}
+
         <button className="login-btn" onClick={handleLogin} disabled={loading}>
           {loading ? 'Signing in…' : 'Sign In'}
         </button>
+
         <p className="login-hint">Staff ID format: AMML-001 · Contact admin if locked out</p>
       </div>
     </div>

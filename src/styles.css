@@ -1,7 +1,6 @@
 /* AMML Design System — Tailwind 4 + CSS Custom Properties */
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Libre+Baskerville:wght@700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 

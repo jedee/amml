@@ -19,14 +19,19 @@ export function useStaffImport() {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const data = new Uint8Array(e.target?.result);
-                parse(data, ext).then((rows) => {
-                    if (!rows.length) {
-                        setError('No data found in file.');
-                        return;
-                    }
-                    setPreview(rows);
-                });
+                if (ext === 'csv') {
+                    const text = e.target?.result;
+                    parse(text, ext).then((rows) => {
+                        if (!rows.length) { setError('No data found in file.'); return; }
+                        setPreview(rows);
+                    });
+                } else {
+                    const data = new Uint8Array(e.target?.result);
+                    parse(data, ext).then((rows) => {
+                        if (!rows.length) { setError('No data found in file.'); return; }
+                        setPreview(rows);
+                    });
+                }
             }
             catch {
                 setError('Failed to read file.');
@@ -41,7 +46,7 @@ export function useStaffImport() {
         const XLSX = (await import('xlsx')).default;
         let raw = [];
         if (ext === 'csv') {
-            const text = new TextDecoder().decode(data);
+            const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
             const lines = text.trim().split(/\r?\n/);
             if (!lines.length)
                 return [];

@@ -35,22 +35,30 @@ export function useStaffImport() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        parse(data, ext).then((rows) => {
-          if (!rows.length) { setError('No data found in file.'); return; }
-          setPreview(rows);
-        });
+        if (ext === 'csv') {
+          const text = e.target?.result as string;
+          parse(text, ext).then((rows) => {
+            if (!rows.length) { setError('No data found in file.'); return; }
+            setPreview(rows);
+          });
+        } else {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          parse(data, ext).then((rows) => {
+            if (!rows.length) { setError('No data found in file.'); return; }
+            setPreview(rows);
+          });
+        }
       } catch { setError('Failed to read file.'); }
     };
     if (ext === 'csv') reader.readAsText(file);
     else reader.readAsArrayBuffer(file);
   }, []);
 
-  const parse = async (data: Uint8Array, ext: string): Promise<ParsedStaff[]> => {
+  const parse = async (data: string | Uint8Array, ext: string): Promise<ParsedStaff[]> => {
     const XLSX = (await import('xlsx')).default;
     let raw: any[] = [];
     if (ext === 'csv') {
-      const text = new TextDecoder().decode(data);
+      const text = new TextDecoder().decode(data as Uint8Array);
       const lines = text.trim().split(/\r?\n/);
       if (!lines.length) return [];
       const sep = lines[0].includes(',') ? ',' : '\t';
