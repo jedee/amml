@@ -1,11 +1,18 @@
 // ─────────────────────────────────────────────────────────────
-//  AMML — Main Application
+//  AMML — Application Router
+//
+//  phase=splash  → SplashScreen (auto-dismisses after 2.8s)
+//  phase=login   → LoginScreen  (user not logged in yet)
+//  phase=app     → AppShell     (authenticated: TopBar + Sidebar + Page)
+//
+//  Root / serves the full React app; /app serves the legacy vanilla JS app.
 // ─────────────────────────────────────────────────────────────
-import React, { useState } from 'react';
+import React from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { SplashScreen, LoginScreen } from './components/SplashLogin';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
+import HomePage from './pages/HomePage';
 import Dashboard from './pages/Dashboard';
 import AttendancePage from './pages/AttendancePage';
 import StaffPage from './pages/StaffPage';
@@ -16,7 +23,6 @@ import PayrollPage from './pages/PayrollPage';
 import AlertsPage from './pages/AlertsPage';
 import ActivityLogPage from './pages/ActivityLogPage';
 import UsersPage from './pages/UsersPage';
-import StaffSettingsPage from './pages/StaffSettingsPage';
 import SettingsPage from './pages/SettingsPage';
 import AISalesPage from './pages/AISalesPage';
 
@@ -36,17 +42,10 @@ const PAGES: Record<string, React.ComponentType> = {
   settings: SettingsPage,
 };
 
+// ── Authenticated Shell ────────────────────────────────────
 function AppShell() {
-  const { state, dispatch } = useApp();
-  const [currentPage, setCurrentPage] = useState('dashboard');
-
-  // Phase-based routing: splash → login → app
-  if (state.phase === 'splash') {
-    return <SplashScreen onDone={() => dispatch({ type: 'GO_TO_LOGIN' })} />;
-  }
-  if (state.phase === 'login' || !state.user) {
-    return <LoginScreen />;
-  }
+  const { state } = useApp();
+  const [currentPage, setCurrentPage] = React.useState('dashboard');
 
   return (
     <div id="app" className="visible">
@@ -56,21 +55,40 @@ function AppShell() {
         <main className="main">
           {PAGES[currentPage]
             ? React.createElement(PAGES[currentPage])
-            : <div className="empty-state">
+            : (
+              <div className="empty-state">
                 <div className="es-icon">🚧</div>
                 <div className="es-title">Coming Soon</div>
                 <p>{currentPage} — under construction</p>
-              </div>}
+              </div>
+            )}
         </main>
       </div>
     </div>
   );
 }
 
+// ── Root Router ───────────────────────────────────────────
+function AppRouter() {
+  const { state } = useApp();
+
+  switch (state.phase) {
+    case 'splash':
+      return <SplashScreen />;
+    case 'login':
+      return <LoginScreen />;
+    case 'app':
+      return state.user ? <AppShell /> : <LoginScreen />;
+    default:
+      return <HomePage />;
+  }
+}
+
+// ── Entry Point ───────────────────────────────────────────
 export default function App() {
   return (
     <AppProvider>
-      <AppShell />
+      <AppRouter />
     </AppProvider>
   );
 }

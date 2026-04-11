@@ -4,155 +4,169 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-
-const DB_KEY = 'amml_mmis_v1';
+import { Save, Download, Upload, Trash2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { state, dispatch } = useApp();
-  const [msg, setMsg] = useState('');
+  const [saved, setSaved] = useState(false);
 
-  function save() {
-    try {
-      const payload = {
-        markets: state.markets,
-        staff: state.staff,
-        devices: state.devices,
-        att: state.att.slice(-2000),
-        users: state.users,
-        settings: state.settings,
-        activityLog: (state.activityLog || []).slice(0, 300),
-        phase: state.phase,
-        savedAt: new Date().toISOString(),
-        version: 'AMML-MMIS-v2',
-      };
-      const serialised = JSON.stringify(payload);
-      if (serialised.length > 4 * 1024 * 1024) {
-        payload.att = payload.att.slice(-200);
-      }
-      localStorage.setItem(DB_KEY, JSON.stringify(payload));
-      setMsg('✅ Saved to browser storage');
-    } catch (e: any) {
-      if (e.name === 'QuotaExceededError') {
-        setMsg('❌ Storage full — try exporting a backup');
-      } else {
-        setMsg('❌ Save failed: ' + e.message);
-      }
-    }
-    setTimeout(() => setMsg(''), 3000);
-  }
+  const [form, setForm] = useState({
+    startTime: state.settings?.startTime ?? '08:00',
+    endTime: state.settings?.endTime ?? '17:00',
+    lateMinutes: state.settings?.lateMinutes ?? 15,
+    minHours: state.settings?.minHours ?? 7,
+    dailyRate: state.settings?.dailyRate ?? 5000,
+    lateDeduction: state.settings?.lateDeduction ?? 500,
+    absentDeductPct: state.settings?.absentDeductPct ?? 100,
+  });
 
-  function exportBackup() {
-    const payload = {
-      markets: state.markets,
-      staff: state.staff,
-      devices: state.devices,
-      att: state.att.slice(-2000),
-      users: state.users,
-      settings: state.settings,
-      activityLog: (state.activityLog || []).slice(0, 300),
-      savedAt: new Date().toISOString(),
-      version: 'AMML-MMIS-v2',
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const set = (k: keyof typeof form, v: string | number) =>
+    setForm(f => ({ ...f, [k]: v }));
+
+  const save = () => {
+    dispatch({ type: 'UPDATE_SETTINGS', payload: form });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const exportBackup = () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `amml-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `amml-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    dispatch({ type: 'AUDIT_LOG', payload: { action: 'EXPORT_BACKUP', detail: 'Full data backup downloaded' } });
-    setMsg('✅ Backup downloaded');
-    setTimeout(() => setMsg(''), 3000);
-  }
+  };
 
-  function importBackup(file: File) {
+  const importBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = ev => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        if (!data.version) throw new Error('Invalid backup file');
+        const data = JSON.parse(ev.target?.result as string);
         dispatch({ type: 'LOAD_STATE', payload: data });
-        dispatch({ type: 'AUDIT_LOG', payload: { action: 'IMPORT_BACKUP', detail: `Restored from backup dated ${data.savedAt}` } });
-        setMsg(`✅ Restored ${data.staff.length} staff, ${data.att.length} attendance records`);
+        alert('Backup restored successfully.');
       } catch {
-        setMsg('❌ Failed to parse backup file');
+        alert('Invalid backup file.');
       }
-      setTimeout(() => setMsg(''), 4000);
     };
     reader.readAsText(file);
-  }
+  };
 
-  const usedBytes = new Blob([JSON.stringify(state)]).size;
-  const limitBytes = 5 * 1024 * 1024;
-  const usedPct = Math.round((usedBytes / limitBytes) * 100);
+  const fmt = (n: number) => `₦${n.toLocaleString()}`;
 
   return (
     <div className="page active">
       <div className="ph">
         <div className="ph-l">
           <h2>⚙️ Settings</h2>
-          <p>Data management, backup, and preferences</p>
+          <p>Configure payroll rules, attendance thresholds, and system preferences</p>
+        </div>
+        <div className="ph-r">
+          <button className="btn btn-blue btn-sm" onClick={save}>
+            <Save size={14} /> {saved ? '✓ Saved!' : 'Save Changes'}
+          </button>
         </div>
       </div>
 
-      {/* Storage usage */}
-      <div className="card">
-        <div className="card-head">
-          <div className="card-title">💾 Storage</div>
-        </div>
-        <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 12 }}>
-          Data is stored in your browser's localStorage (max 5 MB).
-        </p>
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
-            <span>Used</span>
-            <span>{(usedBytes / 1024).toFixed(1)} KB / 5 MB</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: 20 }}>
+        {/* Attendance Rules */}
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">🕐 Attendance Rules</div>
           </div>
-          <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(usedPct, 100)}%`, background: usedPct > 80 ? 'var(--orange)' : 'var(--green-logo)', borderRadius: 3, transition: 'width .4s' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="fg">
+                <label>Start Time</label>
+                <input type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} />
+              </div>
+              <div className="fg">
+                <label>End Time</label>
+                <input type="time" value={form.endTime} onChange={e => set('endTime', e.target.value)} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="fg">
+                <label>Late threshold (minutes)</label>
+                <input type="number" min={0} value={form.lateMinutes} onChange={e => set('lateMinutes', Number(e.target.value))} />
+              </div>
+              <div className="fg">
+                <label>Min hours per day</label>
+                <input type="number" min={1} max={24} value={form.minHours} onChange={e => set('minHours', Number(e.target.value))} />
+              </div>
+            </div>
           </div>
         </div>
-        {msg && <p style={{ fontSize: 13, fontWeight: 600, marginTop: 8 }}>{msg}</p>}
-      </div>
 
-      {/* Backup */}
-      <div className="card">
-        <div className="card-head">
-          <div className="card-title">📦 Backup & Restore</div>
+        {/* Payroll Rules */}
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">💵 Payroll Rules</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="fg">
+              <label>Daily rate (₦)</label>
+              <input type="number" min={0} value={form.dailyRate} onChange={e => set('dailyRate', Number(e.target.value))} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="fg">
+                <label>Late deduction per instance (₦)</label>
+                <input type="number" min={0} value={form.lateDeduction} onChange={e => set('lateDeduction', Number(e.target.value))} />
+              </div>
+              <div className="fg">
+                <label>Absent deduction (% of daily rate)</label>
+                <input type="number" min={0} max={100} value={form.absentDeductPct} onChange={e => set('absentDeductPct', Number(e.target.value))} />
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="mf">
-          <button className="btn btn-blue" onClick={exportBackup}>📥 Download Backup (JSON)</button>
-          <label className="btn btn-outline" style={{ cursor: 'pointer' }}>
-            📂 Restore from Backup
-            <input type="file" accept=".json" style={{ display: 'none' }} onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              if (e.target.files?.[0]) importBackup(e.target.files[0]);
-            }} />
-          </label>
-          <button className="btn btn-green" onClick={save}>💾 Save Now</button>
-        </div>
-        <p style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 10 }}>
-          Backup is a full JSON export — keep it safe. To restore, upload the same file.
-        </p>
-      </div>
 
-      {/* Danger zone */}
-      <div className="card" style={{ borderColor: 'rgba(192,57,43,.3)' }}>
-        <div className="card-head">
-          <div className="card-title" style={{ color: '#C0392B' }}>⚠️ Danger Zone</div>
+        {/* Data Management */}
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">💾 Data Management</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="flex gap-2 flex-wrap">
+              <button className="btn btn-outline" onClick={exportBackup}>
+                <Download size={14} /> Export Backup (JSON)
+              </button>
+              <label className="btn btn-outline" style={{ cursor: 'pointer' }}>
+                <Upload size={14} /> Import Backup
+                <input type="file" accept=".json" style={{ display: 'none' }} onChange={importBackup} />
+              </label>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text3)' }}>
+              {fmt(JSON.stringify(state).length * 2)} chars in memory · Exported backup is a full snapshot
+            </p>
+          </div>
         </div>
-        <button
-          className="btn"
-          style={{ background: '#C0392B', color: '#fff', border: 'none' }}
-          onClick={() => {
-            if (confirm('This will erase ALL data — staff, attendance, settings. This cannot be undone. Are you sure?')) {
-              localStorage.removeItem(DB_KEY);
-              dispatch({ type: 'AUDIT_LOG', payload: { action: 'CLEAR_DATA', detail: 'All data cleared' } });
-              window.location.reload();
-            }
-          }}
-        >
-          🗑️ Clear All Data
-        </button>
+
+        {/* System Info */}
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">ℹ️ System Info</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+            {([
+              ['Markets', state.markets.length],
+              ['Staff', state.staff.length],
+              ['Devices', state.devices.length],
+              ['Attendance Records', state.att.length],
+              ['Activity Log Entries', state.activityLog.length],
+              ['Auth Level', state.user?.authLevel ?? '—'],
+              ['Version', 'AMML v2.0.0'],
+            ] as const).map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text3)' }}>{k}</span>
+                <span style={{ fontWeight: 700, color: 'var(--text)' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

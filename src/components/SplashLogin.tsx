@@ -7,14 +7,14 @@ import { useApp } from '../contexts/AppContext';
 
 // ── Splash Screen ─────────────────────────────────────────
 
-interface SplashProps { onDone: () => void; }
+interface SplashProps { onDone?: () => void; }
 
 export function SplashScreen({ onDone }: SplashProps) {
   const { dispatch } = useApp();
   useEffect(() => {
     const t = setTimeout(() => {
       dispatch({ type: 'GO_TO_LOGIN' });
-      onDone();
+      onDone?.();
     }, 2800);
     return () => clearTimeout(t);
   }, [dispatch, onDone]);

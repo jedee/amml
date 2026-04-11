@@ -1,133 +1,155 @@
 // ─────────────────────────────────────────────────────────────
-//  AMML — Alerts + Activity Log Pages
+//  AMML — Alerts Page
 // ─────────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { AlertCircle, CheckCircle, Info, XCircle, Bell, CheckCheck, Archive } from 'lucide-react';
+
+const ICONS = {
+  info:    <Info size={16} />,
+  success: <CheckCircle size={16} />,
+  warning: <AlertCircle size={16} />,
+  error:   <XCircle size={16} />,
+};
+
+const COLORS = {
+  info:    { bg: 'rgba(0,100,180,.08)',  border: '#0064B4', text: '#0064B4' },
+  success: { bg: 'rgba(40,140,40,.08)',  border: '#288C28', text: '#288C28' },
+  warning: { bg: 'rgba(220,100,0,.08)',  border: '#DC6400', text: '#DC6400' },
+  error:   { bg: 'rgba(192,57,43,.08)',  border: '#C0392B', text: '#C0392B' },
+};
 
 export default function AlertsPage() {
-  const { state, dispatch } = useApp();
-  const [msg, setMsg] = useState('');
-  const [text, setText] = useState('');
-  const [priority, setPriority] = useState<'info' | 'warn' | 'critical'>('warn');
-  const [kind, setKind] = useState<'alert' | 'notice'>('alert');
+  const { state, dispatch, can } = useApp();
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  const alerts = (state.alerts || []).filter((a: any) => a.dismissed !== true);
+  const alerts = filter === 'unread'
+    ? state.alerts.filter(a => !a.dismissed)
+    : state.alerts;
 
-  function createAlert() {
-    if (!text.trim()) return;
-    const id = 'al' + Math.random().toString(36).slice(2, 8);
-    dispatch({
-      type: 'ADD_ALERT',
-      payload: {
-        id,
-        text: text.trim(),
-        priority,
-        kind,
-        date: new Date().toISOString().slice(0, 10),
-        read: false,
-        dismissed: false,
-      } as any,
-    });
-    dispatch({ type: 'AUDIT_LOG', payload: { action: 'CREATE_ALERT', detail: `${kind}: ${text.trim().slice(0, 50)}` } });
-    setText('');
-    setMsg('✅ Alert posted');
-    setTimeout(() => setMsg(''), 3000);
-  }
-
-  function dismiss(id: string) {
+  const dismiss = (id: string) => {
     dispatch({ type: 'DISMISS_ALERT', payload: id });
-  }
+  };
 
-  const infoAlerts = alerts.filter((a: any) => a.priority === 'info');
-  const warnAlerts = alerts.filter((a: any) => a.priority === 'warn');
-  const critAlerts = alerts.filter((a: any) => a.priority === 'critical');
+  const dismissAll = () => {
+    state.alerts.forEach(a => {
+      if (!a.dismissed) dispatch({ type: 'DISMISS_ALERT', payload: a.id });
+    });
+  };
+
+  const stats = {
+    total:   state.alerts.length,
+    unread:  state.alerts.filter(a => !a.dismissed).length,
+    info:    state.alerts.filter(a => a.type === 'info').length,
+    success: state.alerts.filter(a => a.type === 'success').length,
+    warning: state.alerts.filter(a => a.type === 'warning').length,
+    error:   state.alerts.filter(a => a.type === 'error').length,
+  };
 
   return (
     <div className="page active">
       <div className="ph">
         <div className="ph-l">
           <h2>🔔 Alerts & Notices</h2>
-          <p>{alerts.length} active alert{alerts.length !== 1 ? 's' : ''}</p>
+          <p>{stats.unread} unread · {stats.total} total</p>
+        </div>
+        <div className="ph-r">
+          <div className="flex gap-2">
+            <button
+              className={`btn btn-sm ${filter === 'all' ? 'btn-blue' : 'btn-outline'}`}
+              onClick={() => setFilter('all')}
+            >
+              All ({stats.total})
+            </button>
+            <button
+              className={`btn btn-sm ${filter === 'unread' ? 'btn-blue' : 'btn-outline'}`}
+              onClick={() => setFilter('unread')}
+            >
+              Unread ({stats.unread})
+            </button>
+            {stats.unread > 0 && (
+              <button className="btn btn-sm btn-outline" onClick={dismissAll}>
+                <CheckCheck size={14} /> Mark all read
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Create alert */}
-      {(state.user?.authLevel === 'SUPERADMIN' || state.user?.authLevel === 'MD' || state.user?.authLevel === 'MANAGER') && (
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">📢 Post Alert / Notice</div>
+      {/* Stats row */}
+      <div className="stats-row">
+        {([
+          { label: 'Info',    val: stats.info,    color: '#0064B4' },
+          { label: 'Success', val: stats.success, color: '#288C28' },
+          { label: 'Warnings',val: stats.warning, color: '#DC6400' },
+          { label: 'Errors',  val: stats.error,   color: '#C0392B' },
+        ] as const).map(s => (
+          <div key={s.label} className="sr">
+            <div className="sr-val" style={{ color: s.color }}>{s.val}</div>
+            <div className="sr-lbl">{s.label}</div>
           </div>
-          <div className="fg" style={{ marginBottom: 10 }}>
-            <label>Message</label>
-            <textarea
-              value={text}
-              onChange={e => setText(e.target.value)}
-              placeholder="e.g. Wuse Market will be closed on 25th Dec for general cleaning…"
-              rows={3}
-              style={{ width: '100%', padding: '9px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontSize: 13.5, fontFamily: 'inherit', resize: 'vertical' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <select value={priority} onChange={e => setPriority(e.target.value as any)} style={{ width: 'auto' }}>
-              <option value="info">ℹ️ Info</option>
-              <option value="warn">⚠️ Warning</option>
-              <option value="critical">🚨 Critical</option>
-            </select>
-            <select value={kind} onChange={e => setKind(e.target.value as any)} style={{ width: 'auto' }}>
-              <option value="alert">🔔 Alert</option>
-              <option value="notice">📋 Notice</option>
-            </select>
-            <button className="btn btn-blue" onClick={createAlert}>Post Alert</button>
-          </div>
-          {msg && <p style={{ fontSize: 13, marginTop: 8, fontWeight: 600 }}>{msg}</p>}
-        </div>
-      )}
-
-      {/* Alert sections */}
-      {critAlerts.length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(192,57,43,.4)', background: 'rgba(192,57,43,.04)' }}>
-          <div className="card-head">
-            <div className="card-title" style={{ color: '#C0392B' }}>🚨 Critical ({critAlerts.length})</div>
-          </div>
-          {critAlerts.map(a => <AlertRow key={a.id} a={a} onDismiss={dismiss} />)}
-        </div>
-      )}
-      {warnAlerts.length > 0 && (
-        <div className="card" style={{ borderColor: 'rgba(220,100,0,.3)', background: 'rgba(220,100,0,.04)' }}>
-          <div className="card-head">
-            <div className="card-title" style={{ color: 'var(--orange)' }}>⚠️ Warnings ({warnAlerts.length})</div>
-          </div>
-          {warnAlerts.map(a => <AlertRow key={a.id} a={a} onDismiss={dismiss} />)}
-        </div>
-      )}
-      {infoAlerts.length > 0 && (
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">ℹ️ Info ({infoAlerts.length})</div>
-          </div>
-          {infoAlerts.map(a => <AlertRow key={a.id} a={a} onDismiss={dismiss} />)}
-        </div>
-      )}
-      {alerts.length === 0 && (
-        <div className="empty-state">
-          <div className="es-icon">🔔</div>
-          <div className="es-title">No active alerts</div>
-          <p>All clear — post an alert above if needed.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AlertRow({ a, onDismiss }: { a: any; onDismiss: (id: string) => void }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>{a.text}</p>
-        <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>{a.date} · {a.kind}</p>
+        ))}
       </div>
-      <button onClick={() => onDismiss(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text3)', padding: '0 4px' }}>✕</button>
+
+      {/* Alert list */}
+      {alerts.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <div className="es-icon"><Bell size={40} /></div>
+            <div className="es-title">No alerts</div>
+            <p>All caught up. New alerts appear here when triggered.</p>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {alerts.map(alert => {
+            const c = COLORS[alert.type] ?? COLORS.info;
+            return (
+              <div
+                key={alert.id}
+                className="card"
+                style={{
+                  borderLeft: `4px solid ${c.border}`,
+                  background: c.bg,
+                  paddingLeft: 16,
+                  opacity: alert.dismissed ? 0.5 : 1,
+                  transition: 'opacity .2s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ color: c.text, marginTop: 2, flexShrink: 0 }}>
+                    {ICONS[alert.type]}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
+                      {alert.title}
+                    </div>
+                    {alert.message && (
+                      <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>
+                        {alert.message}
+                      </p>
+                    )}
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+                      {new Date(alert.timestamp).toLocaleString('en-GB')}
+                      {alert.staffId && ` · Staff: ${alert.staffId}`}
+                    </div>
+                  </div>
+                  {!alert.dismissed && (
+                    <button
+                      onClick={() => dismiss(alert.id)}
+                      className="btn btn-sm btn-outline"
+                      title="Dismiss"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
