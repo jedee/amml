@@ -169,5 +169,14 @@ export interface AppState {
   payroll: PayrollRecord[];
   alerts: AlertItem[];
   activityLog: AuditEntry[];
+  settings: {
+    startTime: string;
+    endTime: string;
+    lateMinutes: number;
+    minHours: number;
+    dailyRate: number;
+    lateDeduction: number;
+    absentDeductPct: number;
+  };
   zkMap: ZKMapping;
 }

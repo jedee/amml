@@ -1,20 +1,55 @@
 // ─────────────────────────────────────────────────────────────
-//  AMML — Login Screen
+//  AMML — Splash + Login Screens
 // ─────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
-import { ROLE_CONFIG } from '../data/roles';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
+
+// ── Splash Screen ─────────────────────────────────────────
+
+interface SplashProps { onDone: () => void; }
+
+export function SplashScreen({ onDone }: SplashProps) {
+  const { dispatch } = useApp();
+  useEffect(() => {
+    const t = setTimeout(() => {
+      dispatch({ type: 'GO_TO_LOGIN' });
+      onDone();
+    }, 2800);
+    return () => clearTimeout(t);
+  }, [dispatch, onDone]);
+
+  return (
+    <div id="splash">
+      <div className="splash-logo-wrap">
+        <img src="/images/ammllogo.png" alt="AMML" style={{ width: 200, filter: 'brightness(1.1)' }} />
+      </div>
+      <div className="splash-tagline">Abuja Markets Management Limited</div>
+      <div className="splash-bar"><div className="splash-bar-fill" /></div>
+    </div>
+  );
+}
+
+// ── Login Screen ────────────────────────────────────────────
 
 export function LoginScreen() {
   const { dispatch, state } = useApp();
   const [staffId, setStaffId] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // When user logs out, we land back here — clear fields
+  useEffect(() => {
+    setStaffId('');
+    setPassword('');
+    setError('');
+  }, []);
 
   const handleLogin = () => {
     if (!staffId.trim()) { setError('Please enter your Staff ID.'); return; }
 
-    // Find staff member — exact match or prefix (case-insensitive)
+    // Find staff — exact or prefix match
     const match = state.staff.find(s =>
       s.id.toLowerCase() === staffId.trim().toLowerCase() ||
       s.id.toLowerCase().startsWith(staffId.trim().toLowerCase())
@@ -25,7 +60,14 @@ export function LoginScreen() {
       return;
     }
 
-    // Auth level is set on the staff record — no role picker needed
+    // If staff has a password, require it
+    if (match.password && match.password !== password) {
+      setError('Incorrect password. Try again.');
+      setPassword('');
+      return;
+    }
+
+    setLoading(true);
     const user = {
       id: match.id,
       name: `${match.first} ${match.last}`,
@@ -33,57 +75,75 @@ export function LoginScreen() {
       authLevel: match.authLevel,
       market: match.market,
     };
-
-    const levelConfig = ROLE_CONFIG[match.authLevel];
     dispatch({ type: 'LOGIN', payload: user });
-    dispatch({ type: 'AUDIT_LOG', payload: { action: 'LOGIN', detail: `Logged in as ${levelConfig.label}` } });
+    dispatch({ type: 'AUDIT_LOG', payload: { action: 'LOGIN', detail: `Logged in as ${match.first} ${match.last}` } });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleLogin();
   };
 
   return (
     <div id="loginScreen" style={{ display: 'flex' }}>
       <div className="login-card">
         {/* Logo */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <svg width="160" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="10,10 100,10 60,80" fill="var(--blue)" />
-            <polygon points="100,10 190,10 130,80" fill="var(--orange)" />
-            <rect x="10" y="85" width="180" height="22" rx="4" fill="var(--green-logo)" />
-            <text x="110" y="100" textAnchor="middle" fill="white" fontSize="9" fontWeight="700" fontFamily="Outfit,sans-serif" letterSpacing="2">WE DELIVER VALUE</text>
-            <text x="110" y="145" textAnchor="middle" fill="var(--navy)" fontSize="13" fontWeight="800" fontFamily="Outfit,sans-serif" letterSpacing="3">ABUJA MARKETS</text>
-          </svg>
+        <div className="login-logo-area">
+          <img src="/images/ammllogo.png" alt="AMML" style={{ width: 180, filter: 'brightness(1.1)' }} />
         </div>
-
         <div className="login-divider" />
         <div className="login-title">Welcome Back</div>
-        <div className="login-sub">Sign in to your AMML account</div>
+        <div className="login-sub">Sign in to Abuja Markets Management</div>
 
-        {/* Staff ID input */}
+        {/* Staff ID */}
         <div className="login-input-group">
           <label className="login-label">Staff ID</label>
           <input
-            type="text"
             className="login-input"
+            type="text"
             placeholder="e.g. AMML-001"
             value={staffId}
-            onChange={e => setStaffId(e.target.value)}
-            onInput={e => setStaffId((e.target as HTMLInputElement).value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            onChange={e => { setStaffId(e.target.value); setError(''); }}
+            onKeyDown={handleKeyDown}
+            autoComplete="username"
           />
         </div>
 
+        {/* Password — shown conditionally */}
+        {(() => {
+          const match = state.staff.find(s =>
+            s.id.toLowerCase() === staffId.trim().toLowerCase() ||
+            s.id.toLowerCase().startsWith(staffId.trim().toLowerCase())
+          );
+          if (!match || !match.password) return null;
+          return (
+            <div className="login-input-group">
+              <label className="login-label">Password</label>
+              <input
+                className="login-input"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(''); }}
+                onKeyDown={handleKeyDown}
+                autoComplete="current-password"
+              />
+            </div>
+          );
+        })()}
+
         {error && (
-          <div style={{ color: '#ff6b6b', fontSize: 12, marginBottom: 12 }}>
-            ⚠️ {error}
+          <div style={{ color: '#ff6b6b', fontSize: 12, marginBottom: 12, fontWeight: 600 }}>
+            {error}
           </div>
         )}
 
-        <button className="btn-login" onClick={handleLogin} type="button">
-          Sign In →
+        <button className="btn-login" onClick={handleLogin} disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign In'}
         </button>
 
-        <div style={{ marginTop: 16, textAlign: 'center', color: 'rgba(255,255,255,.3)', fontSize: 11 }}>
-          AMML Staff Attendance & Management System
-        </div>
+        <p style={{ color: 'rgba(255,255,255,.3)', fontSize: 11, textAlign: 'center', marginTop: 16 }}>
+          Staff ID format: AMML-001 · No password = no password login
+        </p>
       </div>
     </div>
   );

@@ -47,6 +47,15 @@ const initialState: AppState = {
   alerts: [],
   activityLog: [],
   zkMap: {},
+    settings: {
+      startTime: '08:00',
+      endTime: '17:00',
+      lateMinutes: 15,
+      minHours: 7,
+      dailyRate: 5000,
+      lateDeduction: 500,
+      absentDeductPct: 100,
+    },
 };
 
 // ── Actions ──────────────────────────────────────────────────
@@ -82,16 +91,23 @@ type Action =
   | { type: 'DISMISS_ALERT'; payload: string }
   | { type: 'AUDIT_LOG'; payload: { action: string; detail: string } }
   | { type: 'SET_ZK_MAP'; payload: ZKMapping }
+  | { type: 'GO_TO_LOGIN' }
   | { type: 'LOAD_STATE'; payload: Partial<AppState> };
 
 // ── Reducer ─────────────────────────────────────────────────
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'LOGIN':
+    case 'LOGIN': {
+      // Verify password if staff has one set
+      const staff = state.staff.find(s => s.id === action.payload.staffId);
+      if (staff?.password && staff.password !== (action.payload as any).typedPassword) {
+        return state; // wrong password — stay on login
+      }
       return { ...state, user: action.payload, phase: 'app' as const };
+    }
     case 'LOGOUT':
-      return { ...state, user: null, phase: 'login' };
+      return { ...initialState, phase: 'splash' };
 
     case 'SET_MARKET_FILTER':
       return { ...state, marketFilter: action.payload };
@@ -99,15 +115,14 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, feedF: action.payload };
     case 'SET_REP_TYPE':
       return { ...state, repType: action.payload };
-    case 'SET_PASSWORD':
-      return {
-        ...state,
-        staff: state.staff.map(s =>
-          s.id === action.payload.staffId
-            ? { ...s, password: action.payload.password }
-            : s
-        ),
-      };
+    case 'SET_PASSWORD': {
+      const updated = state.staff.map(s =>
+        s.id === action.payload.staffId
+          ? { ...s, password: action.payload.password }
+          : s
+      );
+      return { ...state, staff: updated };
+    }
 
     case 'SET_MKT_FILTER':
       return { ...state, mktFilter: action.payload };

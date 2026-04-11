@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
-import SplashScreen from './components/SplashScreen';
+import { SplashScreen } from './components/SplashLogin';
 import { LoginScreen } from './components/SplashLogin';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
@@ -13,11 +13,12 @@ import AttendancePage from './pages/AttendancePage';
 import MarketsPage from './pages/MarketsPage';
 import StaffPage from './pages/StaffPage';
 import UsersPage from './pages/UsersPage';
+
+import AlertsPage from './pages/AlertsPage';
+import ActivityLogPage from './pages/ActivityLogPage';
 import './styles/app.css';
 
-// ── Screen phases ────────────────────────────────────────────
-
-type Phase = 'splash' | 'login' | 'app';
+// ── Phase + page router ────────────────────────────────────
 
 const PAGES: Record<string, React.ComponentType> = {
   dashboard:  Dashboard,
@@ -25,48 +26,42 @@ const PAGES: Record<string, React.ComponentType> = {
   markets:    MarketsPage,
   staff:      StaffPage,
   users:      UsersPage,
-  // Add more pages here as they are migrated
+  alerts:      AlertsPage,
+  activitylog: ActivityLogPage,
 };
 
 function AppShell() {
-  const [phase, setPhase] = useState<Phase>('splash');
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  // phase lives in context reducer (not local state) so logout syncs properly
   const { state } = useApp();
 
-  // Auto-advance from login → app once user logs in
-  useEffect(() => {
-    if (phase === 'login' && state.user) {
-      setPhase('app');
-    }
-  }, [state.user, phase]);
-
-  // phase: 'splash' → animated logo, 'login' → login form, 'app' → application
-  // state.user from context controls whether we're truly logged in
-  if (phase === 'splash') {
-    return <SplashScreen onDone={() => setPhase('login')} />;
+  // Auto-advance: splash → login after splash timer (LoginScreen calls onDone)
+  // Auto-advance: login → app when user logs in (state.user is set by LOGIN action)
+  if (state.phase === 'splash') {
+    return <SplashScreen onDone={() => {}} />;
   }
 
-  // phase is 'login' or 'app' — state.user from context determines actual auth state
-  // (dispatch LOGIN from LoginScreen sets state.user, which triggers re-render here)
-  if (phase === 'login') {
+  if (state.phase === 'login' || !state.user) {
     return <LoginScreen />;
   }
 
-  // phase === 'app' — state.user is set when LOGIN action was dispatched
-  // state.user comes from context so this re-renders when login succeeds
+  // Logout: AppShell watches state.phase and returns to LoginScreen
+  // when LOGOUT reducer sets phase back to 'login'
+
+  const [currentPage, setCurrentPage] = useState('dashboard');
+
   return (
-    <div
-      id="app"
-      className="visible"
-      style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}
-    >
+    <div id="app" className="visible">
       <TopBar />
       <div className="shell">
         <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
         <main className="main">
           {PAGES[currentPage]
             ? React.createElement(PAGES[currentPage])
-            : <div style={{ color: 'var(--text3)', padding: 20 }}>Coming soon: {currentPage}</div>}
+            : <div className="empty-state">
+                <div className="es-icon">🚧</div>
+                <div className="es-title">Coming Soon</div>
+                <p>{currentPage} — under construction</p>
+              </div>}
         </main>
       </div>
     </div>

@@ -45,7 +45,7 @@ export default function TopBar() {
     <header className="topbar">
       {/* Brand */}
       <div className="topbar-brand">
-        <img src="/images/pegasus.png" alt="AMML" />
+        <img src="/images/ammllogo.png" height="32" alt="AMML" />
       </div>
 
       <div className="topbar-sep" />
