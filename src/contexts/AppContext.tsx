@@ -1,33 +1,18 @@
 // ─────────────────────────────────────────────────────────────
 //  AMML — Application State Context
-//  Replaces the vanilla JS global S = { ... } object
 // ─────────────────────────────────────────────────────────────
 
 import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
 import type {
-  AppState,
-  AuthLevel,
-  NavItem,
-  User,
-  Market,
-  Staff,
-  Device,
-  Attendance,
-  FeedFilter,
-  ReportType,
-  AuditEntry,
-  AlertItem,
-  PayrollRecord,
-  ZKMapping,
-  RoleConfig,
+  AppState, AuthLevel, NavItem, User, Market, Staff, Device,
+  Attendance, FeedFilter, ReportType, AuditEntry, AlertItem,
+  PayrollRecord, ZKMapping, RoleConfig,
 } from '../types/models';
 import { MARKETS } from '../data/markets';
 import { STAFF } from '../data/staff';
 import { DEVICES } from '../data/devices';
 import { ROLE_CONFIG } from '../data/roles';
 import { SEED_ATTENDANCE } from '../data/attendance';
-
-// ── Initial State ───────────────────────────────────────────
 
 const initialState: AppState = {
   user: null,
@@ -47,18 +32,11 @@ const initialState: AppState = {
   alerts: [],
   activityLog: [],
   zkMap: {},
-    settings: {
-      startTime: '08:00',
-      endTime: '17:00',
-      lateMinutes: 15,
-      minHours: 7,
-      dailyRate: 5000,
-      lateDeduction: 500,
-      absentDeductPct: 100,
-    },
+  settings: {
+    startTime: '08:00', endTime: '17:00', lateMinutes: 15, minHours: 7,
+    dailyRate: 5000, lateDeduction: 500, absentDeductPct: 100,
+  },
 };
-
-// ── Actions ──────────────────────────────────────────────────
 
 type Action =
   | { type: 'LOGIN'; payload: User }
@@ -92,23 +70,24 @@ type Action =
   | { type: 'DISMISS_ALERT'; payload: string }
   | { type: 'AUDIT_LOG'; payload: { action: string; detail: string } }
   | { type: 'SET_ZK_MAP'; payload: ZKMapping }
-  | { type: 'GO_TO_LOGIN' }
   | { type: 'LOAD_STATE'; payload: Partial<AppState> };
-
-// ── Reducer ─────────────────────────────────────────────────
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'LOGIN': {
-      // Verify password if staff has one set
-      const staff = state.staff.find(s => s.id === action.payload.staffId);
-      if (staff?.password && staff.password !== (action.payload as any).typedPassword) {
-        return state; // wrong password — stay on login
-      }
+
+    case 'LOGIN':
       return { ...state, user: action.payload, phase: 'app' as const };
-    }
-    case 'LOGOUT': return { ...initialState, phase: 'splash' as const, staff: state.staff, markets: state.markets, devices: state.devices, att: state.att, settings: state.settings, zkMap: state.zkMap };
-      return { ...initialState, phase: 'splash' };
+
+    case 'LOGOUT':
+      return {
+        ...initialState,
+        phase: 'login' as const,
+        staff: state.staff, markets: state.markets, devices: state.devices,
+        att: state.att, settings: state.settings, zkMap: state.zkMap,
+      };
+
+    case 'GO_TO_LOGIN':
+      return { ...state, phase: 'login' as const };
 
     case 'SET_MARKET_FILTER':
       return { ...state, marketFilter: action.payload };
@@ -116,6 +95,7 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, feedF: action.payload };
     case 'SET_REP_TYPE':
       return { ...state, repType: action.payload };
+
     case 'SET_PASSWORD': {
       const updated = state.staff.map(s =>
         s.id === action.payload.staffId
@@ -131,30 +111,16 @@ function reducer(state: AppState, action: Action): AppState {
     case 'ADD_STAFF':
       return { ...state, staff: [...state.staff, action.payload] };
     case 'UPDATE_STAFF':
-      return {
-        ...state,
-        staff: state.staff.map(s => s.id === action.payload.id ? action.payload : s),
-      };
-
+      return { ...state, staff: state.staff.map(s => s.id === action.payload.id ? action.payload : s) };
     case 'UPDATE_STAFF_AUTH':
-      return {
-        ...state,
-        staff: state.staff.map(s =>
-          s.id === action.payload.staffId
-            ? { ...s, authLevel: action.payload.authLevel }
-            : s
-        ),
-      };
+      return { ...state, staff: state.staff.map(s => s.id === action.payload.staffId ? { ...s, authLevel: action.payload.authLevel } : s) };
     case 'DELETE_STAFF':
       return { ...state, staff: state.staff.filter(s => s.id !== action.payload) };
 
     case 'ADD_DEVICE':
       return { ...state, devices: [...state.devices, action.payload] };
     case 'UPDATE_DEVICE':
-      return {
-        ...state,
-        devices: state.devices.map(d => d.id === action.payload.id ? action.payload : d),
-      };
+      return { ...state, devices: state.devices.map(d => d.id === action.payload.id ? action.payload : d) };
     case 'DELETE_DEVICE':
       return { ...state, devices: state.devices.filter(d => d.id !== action.payload) };
 
@@ -163,10 +129,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'BULK_IMPORT_ATT':
       return { ...state, att: [...state.att, ...action.payload] };
     case 'UPDATE_ATT':
-      return {
-        ...state,
-        att: state.att.map(a => a.id === action.payload.id ? action.payload : a),
-      };
+      return { ...state, att: state.att.map(a => a.id === action.payload.id ? action.payload : a) };
     case 'DELETE_ATT':
       return { ...state, att: state.att.filter(a => a.id !== action.payload) };
 
@@ -181,16 +144,8 @@ function reducer(state: AppState, action: Action): AppState {
       const late = h * 60 + m > 8 * 60 + 30;
       const entry: Attendance = {
         id: `a${Math.random().toString(36).slice(2, 9)}`,
-        staffId,
-        staffName: `${sf.first} ${sf.last}`,
-        market: sf.market,
-        dept: sf.dept,
-        date: today,
-        clockIn,
-        clockOut: '',
-        device: 'Manual',
-        late,
-        duration: null,
+        staffId, staffName: `${sf.first} ${sf.last}`,
+        market: sf.market, dept: sf.dept, date: today, clockIn, clockOut: '', device: 'Manual', late, duration: null,
       };
       return { ...state, att: [...state.att, entry] };
     }
@@ -203,28 +158,18 @@ function reducer(state: AppState, action: Action): AppState {
       const [ih, im] = rec.clockIn.split(':').map(Number);
       const [oh, om] = clockOut.split(':').map(Number);
       const duration = (oh * 60 + om) - (ih * 60 + im);
-      const updated = { ...rec, clockOut, duration };
-      return {
-        ...state,
-        att: state.att.map(a => a.id === rec.id ? updated : a),
-      };
+      return { ...state, att: state.att.map(a => a.id === rec.id ? { ...rec, clockOut, duration } : a) };
     }
 
     case 'ADD_MARKET':
       return { ...state, markets: [...state.markets, action.payload] };
     case 'UPDATE_MARKET':
-      return {
-        ...state,
-        markets: state.markets.map(m => m.id === action.payload.id ? action.payload : m),
-      };
+      return { ...state, markets: state.markets.map(m => m.id === action.payload.id ? action.payload : m) };
 
     case 'ADD_USER':
       return { ...state, users: [...state.users, action.payload] };
     case 'UPDATE_USER':
-      return {
-        ...state,
-        users: state.users.map(u => u.id === action.payload.id ? action.payload : u),
-      };
+      return { ...state, users: state.users.map(u => u.id === action.payload.id ? action.payload : u) };
     case 'DELETE_USER':
       return { ...state, users: state.users.filter(u => u.id !== action.payload) };
 
@@ -238,10 +183,8 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'AUDIT_LOG': {
       const entry: AuditEntry = {
-        id: `log${Date.now()}`,
-        user: state.user?.name ?? 'System',
-        action: action.payload.action,
-        detail: action.payload.detail,
+        id: `log${Date.now()}`, user: state.user?.name ?? 'System',
+        action: action.payload.action, detail: action.payload.detail,
         timestamp: new Date().toISOString(),
       };
       return { ...state, activityLog: [entry, ...state.activityLog] };
@@ -250,15 +193,16 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_ZK_MAP':
       return { ...state, zkMap: action.payload };
 
-    case 'LOAD_STATE':
-      return { ...state, ...action.payload };
+    case 'LOAD_STATE': {
+      // If saved state has a user → go to app. Otherwise → login (no splash replay).
+      const hasUser = !!(action.payload as AppState).user;
+      return { ...state, ...action.payload, phase: hasUser ? 'app' as const : 'login' as const };
+    }
 
     default:
       return state;
   }
 }
-
-// ── Context ────────────────────────────────────────────────
 
 interface AppContextValue {
   state: AppState;
@@ -274,17 +218,11 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-// ── Provider ────────────────────────────────────────────────
-
 interface Props { children: ReactNode }
-
 export function AppProvider({ children }: Props) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const navItems = state.user
-    ? (ROLE_CONFIG[state.user.authLevel]?.nav ?? [])
-    : [];
-
+  const navItems = state.user ? (ROLE_CONFIG[state.user.authLevel]?.nav ?? []) : [];
   const roleConfig: Record<AuthLevel, RoleConfig> = ROLE_CONFIG;
   const currentRole: RoleConfig | undefined = state.user ? ROLE_CONFIG[state.user.authLevel] : undefined;
   const authLevels: AuthLevel[] = ['SUPERADMIN', 'MD', 'MANAGER', 'SUPERVISOR', 'OFFICER'];
@@ -295,33 +233,30 @@ export function AppProvider({ children }: Props) {
     SUPERVISOR: 'Level 4 — Market Supervisor',
     OFFICER: 'Level 5 — Market Officer',
   };
-
   const isLoggedIn = state.user !== null;
-
   const can = (minLevel: number): boolean => {
     if (!state.user) return false;
-    const userLevel = ROLE_CONFIG[state.user.authLevel]?.level ?? 99;
-    return userLevel <= minLevel;
+    return (ROLE_CONFIG[state.user.authLevel]?.level ?? 99) <= minLevel;
   };
 
-  // Persist entire state to localStorage (except noisy computed fields)
+  // Persist state to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem('amml_state', JSON.stringify(state));
-    } catch { /* ignore */ }
+    try { localStorage.setItem('amml_state', JSON.stringify(state)); } catch { /* ignore */ }
   }, [state]);
 
-  // Restore full state from localStorage on mount
+  // Restore state from localStorage — always land on login if no saved user
   useEffect(() => {
     try {
       const saved = localStorage.getItem('amml_state');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.user) {
-          dispatch({ type: 'LOAD_STATE', payload: parsed });
-        }
+        const parsed = JSON.parse(saved) as Partial<AppState>;
+        // Always use 'login' phase when restoring (no splash replay on refresh)
+        dispatch({ type: 'LOAD_STATE', payload: { ...parsed, phase: parsed.user ? 'app' as const : 'login' as const } });
+      } else {
+        // No saved state — go straight to login
+        dispatch({ type: 'GO_TO_LOGIN' });
       }
-    } catch { /* ignore */ }
+    } catch { dispatch({ type: 'GO_TO_LOGIN' }); }
   }, []);
 
   return (
@@ -330,8 +265,6 @@ export function AppProvider({ children }: Props) {
     </AppContext.Provider>
   );
 }
-
-// ── Hook ─────────────────────────────────────────────────────
 
 export function useApp(): AppContextValue {
   const ctx = useContext(AppContext);
