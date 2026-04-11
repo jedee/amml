@@ -6,10 +6,9 @@ import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 
 export default function StaffPage() {
-  const { state, roleConfig } = useApp();
+  const { state, roleConfig, can } = useApp();
   const [search, setSearch] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
-
+  
   const filtered = state.staff.filter(s =>
     `${s.first} ${s.last} ${s.id} ${s.market}`.toLowerCase().includes(search.toLowerCase())
   );
@@ -32,8 +31,38 @@ export default function StaffPage() {
             onChange={e => setSearch(e.target.value)}
             style={{ padding: '8px 12px', borderRadius: 8 }}
           />
-          <button className="btn btn-blue" onClick={() => setShowAdd(true)}>➕ Add Staff</button>
         </div>
+      </div>
+
+      {/* Staff enrollment is done via biometric device import */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(0,100,180,.06), rgba(220,100,0,.04))',
+        border: '1.5px solid var(--border)',
+        borderRadius: 'var(--r)',
+        padding: '16px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        marginBottom: 4,
+      }}>
+        <div style={{ fontSize: 28 }}>📋</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Staff Enrollment — Coming Soon</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 2 }}>
+            For now, staff records are created automatically when you import biometric device logs.
+            New staff appearing in ZKTeco / Bantech logs will be auto-enrolled on import.
+          </div>
+        </div>
+        <span style={{
+          background: 'rgba(0,100,180,.1)',
+          color: 'var(--blue)',
+          fontSize: 11,
+          fontWeight: 800,
+          padding: '4px 12px',
+          borderRadius: 99,
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+        }}>BIOMETRIC</span>
       </div>
 
       <div className="card">
@@ -85,22 +114,6 @@ export default function StaffPage() {
         )}
       </div>
 
-      {showAdd && (
-        <div className="modal-overlay" onClick={() => setShowAdd(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title">➕ Add New Staff</div>
-              <button className="modal-close" onClick={() => setShowAdd(false)}>×</button>
-            </div>
-            <p style={{ fontSize: 13, color: 'var(--text3)' }}>
-              Full staff enrollment form coming soon. For now, staff are imported from biometric device logs.
-            </p>
-            <div style={{ marginTop: 16 }}>
-              <button className="btn btn-outline" onClick={() => setShowAdd(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

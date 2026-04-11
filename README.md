@@ -106,6 +106,16 @@ Key types in `src/types/models.ts`:
 | Alert system | ✅ | ⬜ |
 | Activity log | ✅ | ⬜ |
 
+## Notes
+
+### Staff Enrollment
+Staff are **not enrolled manually** — they are created automatically when biometric device logs are imported. When ZKTeco/Bantech records reference an unknown staff ID, a new `Staff` record is auto-created. See `DevicesPage.tsx` → **Biometric Import** tab.
+
+### Auth & Permissions
+- Users log in with their **Staff ID** (e.g. `AMML-001`) and a self-set password
+- Super Admin / MD can assign roles to staff via the **Users** page
+- Navigation is role-aware — officers see only their allowed modules
+
 ## Development
 
 ```bash
