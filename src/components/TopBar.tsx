@@ -21,7 +21,7 @@ function getRoleColor(authLevel: string): string {
 }
 
 export default function TopBar() {
-  const { state, dispatch, navItems } = useApp();
+  const { state, dispatch } = useApp();
   const [time, setTime] = useState('');
 
   useEffect(() => {
@@ -41,37 +41,21 @@ export default function TopBar() {
   const roleColor = getRoleColor(state.user.authLevel);
   const initials = getInitials(state.user.name);
 
-  const handleLogout = () => {
-    dispatch({ type: 'LOGOUT' });
-  };
-
-  const handleMarketChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch({ type: 'SET_MARKET_FILTER', payload: e.target.value });
-  };
-
   return (
     <header className="topbar">
       {/* Brand */}
       <div className="topbar-brand">
-        <img src="/images/pegasus.png" alt="AMML" style={{ height: 32, filter: 'brightness(1.1)' }} />
+        <img src="/images/pegasus.png" alt="AMML" />
       </div>
 
       <div className="topbar-sep" />
 
       {/* Market Selector */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        background: 'rgba(255,255,255,.08)', borderRadius: 99,
-        padding: '5px 14px', border: '1px solid rgba(255,255,255,.1)',
-      }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>📍</span>
+      <div className="market-sel">
+        <span>📍</span>
         <select
           value={state.marketFilter}
-          onChange={handleMarketChange}
-          style={{
-            background: 'none', border: 'none', color: '#fff',
-            fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
-          }}
+          onChange={e => dispatch({ type: 'SET_MARKET_FILTER', payload: e.target.value })}
         >
           <option>All Markets</option>
           {state.markets.map(m => (
@@ -81,41 +65,21 @@ export default function TopBar() {
       </div>
 
       <div className="topbar-spacer" />
-
-      {/* Clock */}
       <div className="topbar-clock">{time}</div>
 
       {/* Notification bell */}
-      <div style={{
-        width: 34, height: 34, borderRadius: '50%',
-        background: 'rgba(255,255,255,.08)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 16, border: '1px solid rgba(255,255,255,.1)',
-        cursor: 'pointer', position: 'relative',
-      }}>
+      <div className="notif-btn">
         🔔
-        {state.alerts.length > 0 && (
-          <div style={{
-            position: 'absolute', top: 4, right: 4, width: 8, height: 8,
-            background: 'var(--orange)', borderRadius: '50%',
-            border: '2px solid var(--navy)',
-          }} />
-        )}
+        {state.alerts.length > 0 && <div className="notif-dot" />}
       </div>
 
       {/* User */}
       <div
         className="topbar-user"
-        onClick={handleLogout}
+        onClick={() => dispatch({ type: 'LOGOUT' })}
         title="Click to logout"
-        style={{ cursor: 'pointer' }}
       >
-        <div
-          className="ua"
-          style={{ background: roleColor }}
-        >
-          {initials}
-        </div>
+        <div className="ua" style={{ background: roleColor }}>{initials}</div>
         <span>{state.user.name.split(' ')[0]}</span>
       </div>
     </header>
