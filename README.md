@@ -125,3 +125,15 @@ bun run build  # Production build → dist/
 ```
 
 The site runs at `http://localhost:54305` via the Zo preview iframe.
+
+## Staff Nominal Roll Import
+
+Use the **"Import Nominal Roll"** button on the Staff page to bulk-upload staff from Excel or CSV.
+
+**Required columns:** `AMML ID`, `First`, `Last`, `Department`, `Market`
+
+**Optional columns:** `Phone`, `Role`, `Salary`, `AuthLevel`
+
+**AuthLevel values:** `SUPERADMIN`, `MD`, `MANAGER`, `SUPERVISOR`, `OFFICER`
+
+Duplicate AMML IDs (already registered staff) will be **updated** with the new data. New IDs will be **added** as active staff.
