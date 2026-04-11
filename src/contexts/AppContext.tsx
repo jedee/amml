@@ -247,9 +247,10 @@ function reducer(state: AppState, action: Action): AppState {
 interface AppContextValue {
   state: AppState;
   dispatch: React.Dispatch<Action>;
-  // Convenience helpers
   navItems: NavItem[];
   roleConfig: RoleConfig | undefined;
+  authLevels: AuthLevel[];
+  levelLabels: Record<AuthLevel, string>;
   isLoggedIn: boolean;
   can: (minLevel: number) => boolean;
 }
@@ -268,6 +269,14 @@ export function AppProvider({ children }: Props) {
     : [];
 
   const roleConfig: RoleConfig | undefined = state.user ? ROLE_CONFIG[state.user.authLevel] : undefined;
+  const authLevels: AuthLevel[] = ['SUPERADMIN', 'MD', 'MANAGER', 'SUPERVISOR', 'OFFICER'];
+  const levelLabels: Record<AuthLevel, string> = {
+    SUPERADMIN: 'Level 1 — Super Admin',
+    MD: 'Level 2 — Managing Director',
+    MANAGER: 'Level 3 — Operations Manager',
+    SUPERVISOR: 'Level 4 — Market Supervisor',
+    OFFICER: 'Level 5 — Market Officer',
+  };
 
   const isLoggedIn = state.user !== null;
 
@@ -277,32 +286,28 @@ export function AppProvider({ children }: Props) {
     return userLevel <= minLevel;
   };
 
-  // Persist to localStorage on every state change
+  // Persist entire state to localStorage (except noisy computed fields)
   useEffect(() => {
     try {
-      const { user, marketFilter, feedF, repType, mktFilter, zkMap } = state;
-      localStorage.setItem('amml_state', JSON.stringify({ user, marketFilter, feedF, repType, mktFilter, zkMap }));
+      localStorage.setItem('amml_state', JSON.stringify(state));
     } catch { /* ignore */ }
   }, [state]);
 
-  // Restore from localStorage on mount
+  // Restore full state from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('amml_state');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.user) dispatch({ type: 'LOGIN', payload: parsed.user });
-        if (parsed.marketFilter) dispatch({ type: 'SET_MARKET_FILTER', payload: parsed.marketFilter });
-        if (parsed.feedF) dispatch({ type: 'SET_FEED_FILTER', payload: parsed.feedF });
-        if (parsed.repType) dispatch({ type: 'SET_REP_TYPE', payload: parsed.repType });
-        if (parsed.mktFilter) dispatch({ type: 'SET_MKT_FILTER', payload: parsed.mktFilter });
-        if (parsed.zkMap) dispatch({ type: 'SET_ZK_MAP', payload: parsed.zkMap });
+        if (parsed.user) {
+          dispatch({ type: 'LOAD_STATE', payload: parsed });
+        }
       }
     } catch { /* ignore */ }
   }, []);
 
   return (
-    <AppContext.Provider value={{ state, dispatch, navItems, roleConfig, isLoggedIn, can }}>
+    <AppContext.Provider value={{ state, dispatch, navItems, roleConfig, authLevels, levelLabels, isLoggedIn, can }}>
       {children}
     </AppContext.Provider>
   );

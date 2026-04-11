@@ -4,8 +4,6 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { STAFF } from '../data/staff';
-import { ROLE_CONFIG, AUTH_LEVELS, LEVEL_LABELS } from '../data/roles';
 import type { AuthLevel } from '../types/models';
 
 export default function UsersPage() {
@@ -21,7 +19,7 @@ export default function UsersPage() {
 
   // Build user list from staff records
   const allUsers = useMemo(() => {
-    return STAFF.map(s => ({
+    return state.staff.map(s => ({
       id: s.id,
       name: `${s.first} ${s.last}`,
       staffId: s.id,
@@ -30,7 +28,7 @@ export default function UsersPage() {
       dept: s.dept,
       active: true,
     }));
-  }, []);
+  }, [state.staff]);
 
   const filtered = useMemo(() => {
     return allUsers.filter(u => {
@@ -51,7 +49,7 @@ export default function UsersPage() {
 
   const handleAddUser = () => {
     if (!addId.trim()) { setAddError('Enter a Staff ID.'); return; }
-    const match = STAFF.find(s => s.id.toLowerCase() === addId.trim().toLowerCase());
+    const match = state.staff.find(s => s.id.toLowerCase() === addId.trim().toLowerCase());
     if (!match) { setAddError('Staff ID not found.'); return; }
     dispatch({ type: 'UPDATE_STAFF_AUTH', payload: { staffId: match.id, authLevel: addLevel } });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'ADD_USER', detail: `Added ${match.id} as ${addLevel}` } });
@@ -59,7 +57,7 @@ export default function UsersPage() {
   };
 
   const levelBadge = (level: AuthLevel) => {
-    const cfg = ROLE_CONFIG[level];
+    const cfg = state.roleConfig[level];
     return (
       <span style={{
         padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 800,
@@ -107,8 +105,8 @@ export default function UsersPage() {
                 onChange={e => setAddLevel(e.target.value as AuthLevel)}
                 style={{ padding: '9px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontFamily: 'inherit', fontSize: 13, background: 'var(--surface2)', minWidth: 200 }}
               >
-                {AUTH_LEVELS.map(l => (
-                  <option key={l} value={l}>{LEVEL_LABELS[l]}</option>
+                {state.authLevels.map(l => (
+                  <option key={l} value={l}>{state.levelLabels[l]}</option>
                 ))}
               </select>
             </div>
@@ -117,7 +115,7 @@ export default function UsersPage() {
           </div>
           {addError && <div style={{ color: '#e74c3c', fontSize: 12 }}>⚠️ {addError}</div>}
           <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>
-            Available staff IDs: {STAFF.slice(0, 8).map(s => s.id).join(', ')}…
+            Available staff IDs: {state.staff.slice(0, 8).map(s => s.id).join(', ')}…
           </div>
         </div>
       )}
@@ -137,7 +135,7 @@ export default function UsersPage() {
           style={{ padding: '9px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontFamily: 'inherit', fontSize: 13, background: 'var(--surface)' }}
         >
           <option value="ALL">All Levels</option>
-          {AUTH_LEVELS.map(l => <option key={l} value={l}>{ROLE_CONFIG[l].label}</option>)}
+          {state.authLevels.map(l => <option key={l} value={l}>{state.roleConfig[l].label}</option>)}
         </select>
         <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 'auto' }}>
           {filtered.length} user{filtered.length !== 1 ? 's' : ''}
@@ -173,7 +171,7 @@ export default function UsersPage() {
                       onChange={e => setEditLevel(e.target.value as AuthLevel)}
                       style={{ padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--blue)', fontFamily: 'inherit', fontSize: 12, background: 'var(--surface)' }}
                     >
-                      {AUTH_LEVELS.map(l => <option key={l} value={l}>{ROLE_CONFIG[l].label}</option>)}
+                      {state.authLevels.map(l => <option key={l} value={l}>{state.roleConfig[l].label}</option>)}
                     </select>
                   ) : levelBadge(u.authLevel)}
                 </td>
@@ -202,7 +200,7 @@ export default function UsersPage() {
 
       {/* Legend */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        {AUTH_LEVELS.map(l => (
+        {state.authLevels.map(l => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {levelBadge(l)}
             <span style={{ fontSize: 11.5, color: 'var(--text3)' }}>{l}</span>

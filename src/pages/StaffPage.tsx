@@ -70,7 +70,7 @@ export default function StaffPage() {
                         color: getRoleColor(s.authLevel),
                       }}
                     >
-                      {ROLE_CONFIG[s.authLevel]?.short ?? s.authLevel}
+                      {state.roleConfig[s.authLevel]?.short ?? s.authLevel}
                     </span>
                   </td>
                   <td>
