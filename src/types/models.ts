@@ -51,6 +51,7 @@ export interface Staff {
   salary: number;
   active: boolean;
   authLevel: AuthLevel;
+  password?: string;
 }
 
 // ── Devices ────────────────────────────────────────────────
@@ -151,6 +152,7 @@ export interface AuditEntry {
 
 // ── App State ───────────────────────────────────────────────
 export interface AppState {
+  phase: 'splash' | 'login' | 'app';
   user: User | null;
   marketFilter: string;
   feedF: FeedFilter;

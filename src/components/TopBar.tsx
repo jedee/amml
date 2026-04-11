@@ -42,7 +42,9 @@ export default function TopBar() {
   const roleColor = getRoleColor(state.user.authLevel);
   const initials = getInitials(state.user.name);
 
-  const handleLogout = () => dispatch({ type: 'LOGOUT' });
+  const handleLogout = () => {
+    dispatch({ type: 'LOGOUT' });
+  };
 
   const handleMarketChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     dispatch({ type: 'SET_MARKET_FILTER', payload: e.target.value });

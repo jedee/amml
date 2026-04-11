@@ -31,6 +31,7 @@ import { SEED_ATTENDANCE } from '../data/attendance';
 
 const initialState: AppState = {
   user: null,
+  phase: 'splash' as const,
   marketFilter: 'All Markets',
   feedF: 'all',
   repType: 'monthly' as ReportType,
@@ -53,6 +54,7 @@ const initialState: AppState = {
 type Action =
   | { type: 'LOGIN'; payload: User }
   | { type: 'LOGOUT' }
+  | { type: 'SET_PASSWORD'; payload: { staffId: string; password: string } }
   | { type: 'SET_MARKET_FILTER'; payload: string }
   | { type: 'SET_FEED_FILTER'; payload: FeedFilter }
   | { type: 'SET_REP_TYPE'; payload: ReportType }
@@ -87,9 +89,9 @@ type Action =
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOGIN':
-      return { ...state, user: action.payload };
+      return { ...state, user: action.payload, phase: 'app' as const };
     case 'LOGOUT':
-      return { ...state, user: null };
+      return { ...state, user: null, phase: 'login' };
 
     case 'SET_MARKET_FILTER':
       return { ...state, marketFilter: action.payload };
@@ -97,6 +99,16 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, feedF: action.payload };
     case 'SET_REP_TYPE':
       return { ...state, repType: action.payload };
+    case 'SET_PASSWORD':
+      return {
+        ...state,
+        staff: state.staff.map(s =>
+          s.id === action.payload.staffId
+            ? { ...s, password: action.payload.password }
+            : s
+        ),
+      };
+
     case 'SET_MKT_FILTER':
       return { ...state, mktFilter: action.payload };
 
