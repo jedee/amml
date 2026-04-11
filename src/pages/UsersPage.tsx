@@ -7,7 +7,7 @@ import { useApp } from '../contexts/AppContext';
 import type { AuthLevel } from '../types/models';
 
 export default function UsersPage() {
-  const { state, dispatch, can } = useApp();
+  const { state, dispatch, can, roleConfig, authLevels, levelLabels } = useApp();
   const [search, setSearch] = useState('');
   const [filterLevel, setFilterLevel] = useState<AuthLevel | 'ALL'>('ALL');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function UsersPage() {
   };
 
   const levelBadge = (level: AuthLevel) => {
-    const cfg = state.roleConfig[level];
+    const cfg = roleConfig[level];
     return (
       <span style={{
         padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 800,
@@ -105,8 +105,8 @@ export default function UsersPage() {
                 onChange={e => setAddLevel(e.target.value as AuthLevel)}
                 style={{ padding: '9px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontFamily: 'inherit', fontSize: 13, background: 'var(--surface2)', minWidth: 200 }}
               >
-                {state.authLevels.map(l => (
-                  <option key={l} value={l}>{state.levelLabels[l]}</option>
+                {authLevels.map(l => (
+                  <option key={l} value={l}>{levelLabels[l]}</option>
                 ))}
               </select>
             </div>
@@ -135,7 +135,7 @@ export default function UsersPage() {
           style={{ padding: '9px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', fontFamily: 'inherit', fontSize: 13, background: 'var(--surface)' }}
         >
           <option value="ALL">All Levels</option>
-          {state.authLevels.map(l => <option key={l} value={l}>{state.roleConfig[l].label}</option>)}
+          {authLevels.map(l => <option key={l} value={l}>{roleConfig[l].label}</option>)}
         </select>
         <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 'auto' }}>
           {filtered.length} user{filtered.length !== 1 ? 's' : ''}
@@ -171,7 +171,7 @@ export default function UsersPage() {
                       onChange={e => setEditLevel(e.target.value as AuthLevel)}
                       style={{ padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--blue)', fontFamily: 'inherit', fontSize: 12, background: 'var(--surface)' }}
                     >
-                      {state.authLevels.map(l => <option key={l} value={l}>{state.roleConfig[l].label}</option>)}
+                      {authLevels.map(l => <option key={l} value={l}>{roleConfig[l].label}</option>)}
                     </select>
                   ) : levelBadge(u.authLevel)}
                 </td>
@@ -200,7 +200,7 @@ export default function UsersPage() {
 
       {/* Legend */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        {state.authLevels.map(l => (
+        {authLevels.map(l => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {levelBadge(l)}
             <span style={{ fontSize: 11.5, color: 'var(--text3)' }}>{l}</span>

@@ -248,7 +248,8 @@ interface AppContextValue {
   state: AppState;
   dispatch: React.Dispatch<Action>;
   navItems: NavItem[];
-  roleConfig: RoleConfig | undefined;
+  roleConfig: Record<AuthLevel, RoleConfig>;
+  currentRole: RoleConfig | undefined;
   authLevels: AuthLevel[];
   levelLabels: Record<AuthLevel, string>;
   isLoggedIn: boolean;
@@ -268,7 +269,8 @@ export function AppProvider({ children }: Props) {
     ? (ROLE_CONFIG[state.user.authLevel]?.nav ?? [])
     : [];
 
-  const roleConfig: RoleConfig | undefined = state.user ? ROLE_CONFIG[state.user.authLevel] : undefined;
+  const roleConfig: Record<AuthLevel, RoleConfig> = ROLE_CONFIG;
+  const currentRole: RoleConfig | undefined = state.user ? ROLE_CONFIG[state.user.authLevel] : undefined;
   const authLevels: AuthLevel[] = ['SUPERADMIN', 'MD', 'MANAGER', 'SUPERVISOR', 'OFFICER'];
   const levelLabels: Record<AuthLevel, string> = {
     SUPERADMIN: 'Level 1 — Super Admin',
@@ -307,7 +309,7 @@ export function AppProvider({ children }: Props) {
   }, []);
 
   return (
-    <AppContext.Provider value={{ state, dispatch, navItems, roleConfig, authLevels, levelLabels, isLoggedIn, can }}>
+    <AppContext.Provider value={{ state, dispatch, navItems, roleConfig, currentRole, authLevels, levelLabels, isLoggedIn, can }}>
       {children}
     </AppContext.Provider>
   );

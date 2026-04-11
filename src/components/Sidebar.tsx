@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function Sidebar({ currentPage, onNavigate }: Props) {
-  const { state, navItems, roleConfig } = useApp();
+  const { state, navItems, currentRole } = useApp();
 
   if (!state.user) return null;
 
@@ -23,8 +23,8 @@ export default function Sidebar({ currentPage, onNavigate }: Props) {
           <span
             className="role-badge"
             style={{
-              background: `${roleConfig?.color}22`,
-              color: roleConfig?.color,
+              background: `${currentRole?.color}22`,
+              color: currentRole?.color,
               padding: '4px 10px',
               borderRadius: 99,
               fontSize: 10,
@@ -32,9 +32,9 @@ export default function Sidebar({ currentPage, onNavigate }: Props) {
               letterSpacing: '.04em',
             }}
           >
-            {roleConfig?.short}
+            {currentRole?.short}
           </span>
-          <span className="role-name">{roleConfig?.label}</span>
+          <span className="role-name">{currentRole?.label}</span>
         </div>
       </div>
 

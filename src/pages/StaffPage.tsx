@@ -4,10 +4,9 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { ROLE_CONFIG } from '../data/roles';
 
 export default function StaffPage() {
-  const { state } = useApp();
+  const { state, roleConfig } = useApp();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
 
@@ -70,7 +69,7 @@ export default function StaffPage() {
                         color: getRoleColor(s.authLevel),
                       }}
                     >
-                      {state.roleConfig[s.authLevel]?.short ?? s.authLevel}
+                      {roleConfig[s.authLevel]?.short ?? s.authLevel}
                     </span>
                   </td>
                   <td>

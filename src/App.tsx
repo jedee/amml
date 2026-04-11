@@ -4,7 +4,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
-import { SplashScreen, LoginScreen } from './components/SplashLogin';
+import SplashScreen from './components/SplashScreen';
+import { LoginScreen } from './components/SplashLogin';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';

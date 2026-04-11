@@ -1,83 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-//  AMML — Splash & Login Screens
+//  AMML — Login Screen
 // ─────────────────────────────────────────────────────────────
 
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
+import React, { useState } from 'react';
 import { ROLE_CONFIG } from '../data/roles';
-
-// ── Splash Screen ───────────────────────────────────────────
-
-interface Props {
-  onDone: () => void;
-}
-
-export function SplashScreen({ onDone }: Props) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 2800);
-    return () => clearTimeout(t);
-  }, [onDone]);
-
-  return (
-    <div id="splash">
-      <div style={{
-        position: 'relative', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', marginBottom: 0,
-      }}>
-        <svg className="amml-svg-logo" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
-          {/* Chevron blue */}
-          <polygon
-            className="logo-path-blue"
-            points="10,10 100,10 60,80"
-            fill="var(--blue)"
-          />
-          {/* Orange triangle */}
-          <polygon
-            className="logo-path-orange"
-            points="100,10 190,10 130,80"
-            fill="var(--orange)"
-          />
-          {/* Green bar */}
-          <rect
-            className="logo-path-green"
-            x="10" y="85" width="180" height="22" rx="4"
-            fill="var(--green-logo)"
-          />
-          {/* "WE DELIVER VALUE" text */}
-          <text
-            className="logo-text-tagline"
-            x="110" y="100"
-            textAnchor="middle"
-            fill="white"
-            fontSize="9"
-            fontWeight="700"
-            fontFamily="Outfit,sans-serif"
-            letterSpacing="2"
-          >
-            WE DELIVER VALUE
-          </text>
-          {/* "ABUJA MARKETS" text */}
-          <text
-            className="logo-text-main"
-            x="110" y="145"
-            textAnchor="middle"
-            fill="var(--navy)"
-            fontSize="13"
-            fontWeight="800"
-            fontFamily="Outfit,sans-serif"
-            letterSpacing="3"
-          >
-            ABUJA MARKETS
-          </text>
-        </svg>
-      </div>
-      <div className="splash-tagline">Abuja Markets Management Limited</div>
-      <div className="splash-bar"><div className="splash-bar-fill" /></div>
-    </div>
-  );
-}
-
-// ── Login Screen ────────────────────────────────────────────
+import { useApp } from '../contexts/AppContext';
 
 export function LoginScreen() {
   const { dispatch, state } = useApp();
