@@ -19,7 +19,7 @@ amml/
 │   │   └── models.ts       # All TypeScript interfaces
 │   ├── data/               # Typed seed data
 │   │   ├── markets.ts      # 18 Abuja markets
-│   │   ├── staff.ts        # 24 staff members
+│   │   ├── staff.ts        # 46 staff members
 │   │   ├── devices.ts      # 16 registered devices
 │   │   ├── roles.ts        # Role config (5 auth levels)
 │   │   └── attendance.ts  # 30-day generated attendance
@@ -104,7 +104,15 @@ Key types in `src/types/models.ts`:
 ## Notes
 
 ### Staff Enrollment
-Staff are **not enrolled manually** — they are created automatically when biometric device logs are imported. When ZKTeco/Bantech records reference an unknown staff ID, a new `Staff` record is auto-created. See `DevicesPage.tsx` → **Biometric Import** tab.
+Staff can be added in two ways:
+1. **Manual** — via the "Add Staff" button on the Staff page (pre-loaded market/department options, AMML-ID validation, duplicate detection)
+2. **Bulk import** — via the "Import Nominal Roll" button on the Staff page (Excel/CSV, upsert semantics)
+3. **Biometric auto-creation** — ZKTeco/Bantech logs referencing an unknown AMML-ID auto-create a skeleton `Staff` record
+
+Each staff record can also be **edited** (click Edit → pre-populated modal) or **deleted** (click Delete → inline confirm step) from the staff table.
+
+### ZK Device Mapping
+The ZK-ID → AMML-ID mapping (used by ZKTeco import) can be reviewed, added, edited, and deleted from the **Biometric Import** panel on the Devices page. Open the "ZK ID → AMML ID Mapping" collapsible section.
 
 ### Auth & Permissions
 - Users log in with their **Staff ID** (e.g. `AMML-001`) and a self-set password
