@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { STAFF } from '../data/staff';
 import { ROLE_CONFIG } from '../data/roles';
 
 // ── Splash Screen ───────────────────────────────────────────
@@ -81,7 +80,7 @@ export function SplashScreen({ onDone }: Props) {
 // ── Login Screen ────────────────────────────────────────────
 
 export function LoginScreen() {
-  const { dispatch } = useApp();
+  const { dispatch, state } = useApp();
   const [staffId, setStaffId] = useState('');
   const [error, setError] = useState('');
 
@@ -89,7 +88,7 @@ export function LoginScreen() {
     if (!staffId.trim()) { setError('Please enter your Staff ID.'); return; }
 
     // Find staff member — exact match or prefix (case-insensitive)
-    const match = STAFF.find(s =>
+    const match = state.staff.find(s =>
       s.id.toLowerCase() === staffId.trim().toLowerCase() ||
       s.id.toLowerCase().startsWith(staffId.trim().toLowerCase())
     );
