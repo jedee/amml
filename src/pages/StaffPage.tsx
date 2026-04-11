@@ -5,7 +5,202 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useStaffImport } from '../hooks/useStaffImport';
+import type { AuthLevel, Staff } from '../types/models';
 
+// ── Add-Staff Modal ─────────────────────────────────────────
+interface StaffFormData {
+  id: string;
+  first: string;
+  last: string;
+  dept: string;
+  market: string;
+  phone: string;
+  role: string;
+  salary: string;
+  authLevel: AuthLevel;
+  active: boolean;
+}
+
+const DEPT_OPTIONS = ['Administration', 'Finance', 'Market Operations', 'Security', 'Cleaning'];
+const AUTH_OPTIONS: AuthLevel[] = ['SUPERADMIN', 'MD', 'MANAGER', 'SUPERVISOR', 'OFFICER'];
+
+function AddStaffModal({ onClose }: { onClose: () => void }) {
+  const { state, dispatch } = useApp();
+
+  const [form, setForm] = useState<StaffFormData>({
+    id: '',
+    first: '',
+    last: '',
+    dept: '',
+    market: '',
+    phone: '',
+    role: '',
+    salary: '',
+    authLevel: 'OFFICER',
+    active: true,
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof StaffFormData, string>>>({});
+
+  const set = (field: keyof StaffFormData, value: string | boolean) =>
+    setForm(f => ({ ...f, [field]: value }));
+
+  const validate = (): boolean => {
+    const errs: typeof errors = {};
+    const idRaw = form.id.trim().toUpperCase().replace(/\s+/g, '');
+    if (!idRaw) errs.id = 'AMML ID is required';
+    else if (!/^AMML-\d{3}$/.test(idRaw)) errs.id = 'Format must be AMML-001';
+    else if (state.staff.some(s => s.id === idRaw)) errs.id = 'This ID already exists';
+    if (!form.first.trim()) errs.first = 'Required';
+    if (!form.last.trim()) errs.last = 'Required';
+    if (!form.dept) errs.dept = 'Required';
+    if (!form.market) errs.market = 'Required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const id = form.id.trim().toUpperCase().replace(/\s+/g, '');
+    const staff: Staff = {
+      id,
+      first: form.first.trim(),
+      last: form.last.trim(),
+      dept: form.dept,
+      market: form.market,
+      phone: form.phone.replace(/\D/g, ''),
+      role: form.role.trim(),
+      salary: form.salary ? parseFloat(form.salary) : 0,
+      authLevel: form.authLevel,
+      active: form.active,
+    };
+    dispatch({ type: 'ADD_STAFF', payload: staff });
+    dispatch({ type: 'AUDIT_LOG', payload: { action: 'CREATE', detail: `Staff ${id} (${staff.first} ${staff.last}) enrolled manually` } });
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,.45)',
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)',
+        width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto',
+        boxShadow: '0 24px 60px rgba(0,0,0,.3)',
+      }}>
+        {/* Modal Header */}
+        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>👤 Add New Staff</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>Manually enroll a single staff member</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text3)', padding: 4, lineHeight: 1 }}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* ID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>AMML ID *</label>
+                <input className="search-input" value={form.id} onChange={e => set('id', e.target.value.toUpperCase())}
+                  placeholder="AMML-001" maxLength={9}
+                  style={{ fontFamily: 'monospace', fontSize: 13, padding: '7px 10px' }} />
+                {errors.id && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.id}</span>}
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Auth Level *</label>
+                <select className="search-input" value={form.authLevel} onChange={e => set('authLevel', e.target.value as AuthLevel)}
+                  style={{ padding: '7px 10px', cursor: 'pointer' }}>
+                  {AUTH_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Name */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>First Name *</label>
+                <input className="search-input" value={form.first} onChange={e => set('first', e.target.value)}
+                  placeholder="Chibuzor" style={{ padding: '7px 10px' }} />
+                {errors.first && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.first}</span>}
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Last Name *</label>
+                <input className="search-input" value={form.last} onChange={e => set('last', e.target.value)}
+                  placeholder="Udekwu" style={{ padding: '7px 10px' }} />
+                {errors.last && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.last}</span>}
+              </div>
+            </div>
+
+            {/* Dept + Market */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Department *</label>
+                <select className="search-input" value={form.dept} onChange={e => set('dept', e.target.value)}
+                  style={{ padding: '7px 10px', cursor: 'pointer' }}>
+                  <option value="">Select department</option>
+                  {DEPT_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                {errors.dept && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.dept}</span>}
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Market *</label>
+                <select className="search-input" value={form.market} onChange={e => set('market', e.target.value)}
+                  style={{ padding: '7px 10px', cursor: 'pointer' }}>
+                  <option value="">Select market</option>
+                  {state.markets.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                </select>
+                {errors.market && <span style={{ fontSize: 11, color: '#C0392B', marginTop: 3, display: 'block' }}>{errors.market}</span>}
+              </div>
+            </div>
+
+            {/* Role + Phone */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Role / Title</label>
+                <input className="search-input" value={form.role} onChange={e => set('role', e.target.value)}
+                  placeholder="Market Officer" style={{ padding: '7px 10px' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Phone</label>
+                <input className="search-input" value={form.phone} onChange={e => set('phone', e.target.value)}
+                  placeholder="08034561234" style={{ padding: '7px 10px', fontFamily: 'monospace' }} />
+              </div>
+            </div>
+
+            {/* Salary */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Monthly Salary (₦)</label>
+              <input className="search-input" type="number" value={form.salary} onChange={e => set('salary', e.target.value)}
+                placeholder="85000" min="0" step="1000" style={{ padding: '7px 10px', fontFamily: 'monospace' }} />
+            </div>
+
+            {/* Active toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Active</span>
+              </label>
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>Inactive staff cannot log in</span>
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-blue">✅ Add Staff</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Main StaffPage ──────────────────────────────────────────
 export default function StaffPage() {
   const { state } = useApp();
   const { staff, markets } = state;
@@ -15,6 +210,7 @@ export default function StaffPage() {
   const [mktFilter, setMktFilter] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'table' | 'import'>('table');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filtered = useMemo(() => {
     return staff.filter(s => {
@@ -29,14 +225,6 @@ export default function StaffPage() {
       return match && mkt && lvl;
     });
   }, [staff, search, mktFilter, levelFilter]);
-
-  const authColor = (lvl: string) => {
-    const map: Record<string, string> = {
-      SUPERADMIN: '#4A148C', MD: '#003C78', MANAGER: '#0064B4',
-      SUPERVISOR: '#DC6400', OFFICER: '#288C28',
-    };
-    return map[lvl] ?? '#6A8AAB';
-  };
 
   const authBadge = (lvl: string) => {
     const colors: Record<string, string> = {
@@ -69,6 +257,9 @@ export default function StaffPage() {
           </button>
           <button className={`btn btn-sm ${activeTab === 'import' ? 'btn-blue' : 'btn-outline'}`} onClick={() => setActiveTab('import')}>
             📥 Import Nominal Roll
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={() => setShowAddModal(true)}>
+            📖 Add Staff
           </button>
         </div>
       </div>
@@ -195,17 +386,6 @@ export default function StaffPage() {
             <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 4 }}>{filtered.length} of {staff.length}</span>
           </div>
 
-          {/* Coming Soon banner */}
-          <div style={{ padding: '14px 18px', background: 'linear-gradient(135deg, rgba(0,100,180,.06), rgba(220,100,0,.04))', border: '1px solid var(--border)', borderRadius: 'var(--r)', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 20 }}>📝</span>
-            <div>
-              <div style={{ fontWeight: 700, marginBottom: 3 }}>Manual Staff Enrollment — Coming Soon</div>
-              <div style={{ fontSize: 13, color: 'var(--text3)' }}>
-                For now, staff are created automatically when you import biometric device logs. To add or update staff, use the <strong>Import Nominal Roll</strong> button above to upload an Excel/CSV file with your staff list.
-              </div>
-            </div>
-          </div>
-
           {/* Staff Table */}
           <div className="card" style={{ padding: 0 }}>
             {filtered.length === 0 ? (
@@ -258,6 +438,8 @@ export default function StaffPage() {
           </div>
         </>
       )}
+
+      {showAddModal && <AddStaffModal onClose={() => setShowAddModal(false)} />}
     </div>
   );
 }

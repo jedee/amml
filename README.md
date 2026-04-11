@@ -133,6 +133,10 @@ Use the **"Import Nominal Roll"** button on the Staff page to bulk-upload staff 
 
 Duplicate AMML IDs (already registered staff) will be **updated** with the new data. New IDs will be **added** as active staff.
 
+## Manual Staff Enrollment
+
+Use the **"Add Staff"** button on the Staff page to manually enroll a single staff member. Fill in the AMML ID (format: `AMML-001`), name, department, market, and optional fields. AMML IDs must be unique — duplicates are rejected.
+
 ## Known Issues
 
 - **Payroll, Reports, AI Sales Suite** are placeholder pages. No data operations are implemented for these modules.
