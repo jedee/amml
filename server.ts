@@ -10,34 +10,6 @@ const app = new Hono();
 const mode: Mode =
   process.env.NODE_ENV === "production" ? "production" : "development";
 
-async function serveAMML(c: any) {
-  // In production, always read from public/ so we get the latest without rebuilding
-  const base = mode === "production" ? "./public" : ".";
-  const file = Bun.file(`${base}/amml.html`);
-  if (await file.exists()) {
-    return new Response(file, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, must-revalidate, max-age=0",
-      },
-    });
-  }
-  // Fallback to dist in dev
-  const fallback = Bun.file(`./dist/amml.html`);
-  if (await fallback.exists()) {
-    return new Response(fallback, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, must-revalidate, max-age=0",
-      },
-    });
-  }
-  return c.text("AMML app not found", 404);
-}
-
-app.get("/app", serveAMML);
-app.get("/app/*", serveAMML);
-
 if (mode === "production") {
   configureProduction(app);
 } else {
@@ -52,14 +24,15 @@ const port = process.env.PORT
 
 export default { fetch: app.fetch, port, idleTimeout: 255 };
 
+// ── Production ─────────────────────────────────────────────
 function configureProduction(app: Hono) {
   app.use("/assets/*", serveStatic({ root: "./dist" }));
   app.get("/favicon.ico", (c) => c.redirect("/favicon.svg", 302));
-  app.use(async (c, next) => {
+  app.use("*", async (c, next) => {
     if (c.req.method !== "GET") return next();
     const path = c.req.path;
     if (path.startsWith("/api/") || path.startsWith("/assets/")) return next();
-    // Serve React app at root
+    // Serve React app for root
     if (path === "/" || path === "") {
       const distIndex = Bun.file("./dist/index.html");
       if (await distIndex.exists()) {
@@ -68,15 +41,24 @@ function configureProduction(app: Hono) {
         });
       }
     }
+    // Fallback: try public/ directory
     const pub = Bun.file(`./public${path}`);
     if (await pub.exists()) {
       const stat = await pub.stat();
       if (stat && !stat.isDirectory()) return new Response(pub);
     }
-    return serveAMML(c);
+    // SPA fallback — serve index.html
+    const index = Bun.file("./dist/index.html");
+    if (await index.exists()) {
+      return new Response(index, {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+    return c.text("AMML not found", 404);
   });
 }
 
+// ── Development ────────────────────────────────────────────
 async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
   const vite = await createViteServer({
     server: { middlewareMode: true, hmr: false, ws: false },
@@ -88,13 +70,9 @@ async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
     if (c.req.path === "/favicon.ico") return c.redirect("/favicon.svg", 302);
 
     const url = c.req.path;
+
+    // Serve root index.html through Vite
     if (url === "/" || url === "/index.html") {
-      const pub = Bun.file("./public/index.html");
-      if (await pub.exists()) {
-        return new Response(pub, {
-          headers: { "Content-Type": "text/html; charset=utf-8" },
-        });
-      }
       let template = await Bun.file("./index.html").text();
       template = await vite.transformIndexHtml(url, template);
       return c.html(template, {
@@ -102,12 +80,14 @@ async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
       });
     }
 
+    // Serve files from public/
     const publicFile = Bun.file(`./public${url}`);
     if (await publicFile.exists()) {
       const stat = await publicFile.stat();
       if (stat && !stat.isDirectory()) return new Response(publicFile);
     }
 
+    // Let Vite handle everything else (JS, CSS, etc.)
     let result;
     try { result = await vite.transformRequest(url); } catch { result = null; }
     if (result) {
@@ -119,7 +99,7 @@ async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
       });
     }
 
-    return serveAMML(c);
+    return c.text("Not found", 404);
   });
 
   return vite;

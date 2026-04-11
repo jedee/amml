@@ -3,7 +3,7 @@
 //  Replaces the vanilla JS global S = { ... } object
 // ─────────────────────────────────────────────────────────────
 
-import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, type ReactNode } from 'react';
 import type { AppState, AuthLevel, NavItem, User, Market, Staff, Device, Attendance, FeedFilter, ReportType, AuditEntry, AlertItem, PayrollRecord, ZKMapping, RoleConfig } from '../types/models';
 import { MARKETS } from '../data/markets';
 import { STAFF } from '../data/staff';
@@ -278,6 +278,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('amml_state', JSON.stringify(state));
     } catch { /* ignore */ }
   }, [state]);
+
+  // Auto-advance splash → login after 2.8s
+  const splashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (state.phase === 'splash') {
+      splashTimer.current = setTimeout(() => {
+        // Guard: only advance if still in splash phase
+        // Phase is in the dependency array, so this only fires if phase never changed
+        dispatch({ type: 'GO_TO_LOGIN' });
+      }, 2800);
+    } else {
+      // Clear timer when leaving splash phase
+      if (splashTimer.current !== null) {
+        clearTimeout(splashTimer.current);
+        splashTimer.current = null;
+      }
+    }
+  }, [state.phase]); // React guarantees the effect re-runs when phase changes,
+                     // and the cleanup (else branch) runs BEFORE the new effect —
+                     // so a timer can only fire if phase was and remains 'splash'
 
   return (
     <AppContext.Provider value={{ state, dispatch, navItems, currentRole, authLevels, levelLabels, isLoggedIn, can }}>

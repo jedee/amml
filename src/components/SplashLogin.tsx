@@ -1,19 +1,10 @@
 // ─────────────────────────────────────────────────────────────
 //  AMML — Splash + Login Screens
 // ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 
 export function SplashScreen() {
-  const { dispatch } = useApp();
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      dispatch({ type: 'GO_TO_LOGIN' });
-    }, 2500);
-    return () => clearTimeout(t);
-  }, [dispatch]);
-
   return (
     <div id="splash">
       <div className="splash-logo-wrap">
@@ -53,7 +44,7 @@ export function LoginScreen() {
   )?.password;
 
   return (
-    <div id="loginScreen">
+    <div id="loginScreen" className="visible">
       <div className="login-card">
         <div className="login-logo-wrap">
           <img src="/images/ammllogo.png" alt="AMML" className="login-logo" />

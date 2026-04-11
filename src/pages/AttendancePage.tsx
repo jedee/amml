@@ -5,7 +5,12 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 
-export default function AttendancePage() {
+interface Props {
+  /** When true, only shows the logged-in user's own attendance (used by "My Attendance" nav) */
+  isMyAtt?: boolean;
+}
+
+export default function AttendancePage({ isMyAtt = false }: Props) {
   const { state, dispatch } = useApp();
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState(() => {
@@ -20,10 +25,11 @@ export default function AttendancePage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Filter by date range + search
+  // Filter by date range + search + (optionally) own staff ID
   const filtered = useMemo(() => {
     return state.att
       .filter(r => {
+        if (isMyAtt && state.user && r.staffId !== state.user.staffId) return false;
         const inRange = r.date >= dateFrom && r.date <= dateTo;
         const match = !search ||
           r.staffName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -32,7 +38,7 @@ export default function AttendancePage() {
         return inRange && match;
       })
       .sort((a, b) => b.date.localeCompare(a.date) || b.clockIn.localeCompare(a.clockIn));
-  }, [state.att, dateFrom, dateTo, search]);
+  }, [state.att, state.user, isMyAtt, dateFrom, dateTo, search]);
 
   // Summary stats for the visible range
   const stats = useMemo(() => {

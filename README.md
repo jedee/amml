@@ -6,25 +6,12 @@
 
 ## Architecture
 
-### Two-Application Problem
+### Single React Application
 
-This repository ships **two separate applications**:
-
-| App | Location | Tech | Description |
-|-----|----------|------|-------------|
-| Legacy | `public/amml.html` | Vanilla JS SPA | The original 5,077-line monolithic app |
-| New | `src/` | React 19 + TypeScript | In-progress rewrite |
-
-The legacy `amml.html` remains fully functional and is served at `/app` and `/app/*`. The React rewrite is the long-term target.
-
-### Current File Structure
+This repository contains **one application** — a React 19 + TypeScript SPA. The legacy vanilla JS app (`amml.html`) was never fully migrated and the source file no longer exists.
 
 ```
 amml/
-├── public/
-│   ├── amml.html          # LEGACY: Vanilla JS SPA (5,077 lines)
-│   ├── index.html          # React entry point
-│   └── images/pegasus.png  # Logo image
 ├── src/
 │   ├── main.tsx            # React entry (mounts App)
 │   ├── App.tsx             # App shell: phase controller + router
@@ -43,12 +30,21 @@ amml/
 │   │   ├── Sidebar.tsx    # Role-aware navigation
 │   │   └── SplashLogin.tsx # SplashScreen + LoginScreen
 │   ├── pages/
-│   │   ├── Dashboard.tsx   # KPI cards, stats, recent attendance
-│   │   ├── AttendancePage.tsx
-│   │   ├── MarketsPage.tsx
-│   │   └── StaffPage.tsx
-│   └── styles/
-│       └── app.css        # AMML design tokens + component styles
+│   │   ├── HomePage.tsx     # Public landing page (/)
+│   │   ├── Dashboard.tsx     # KPI cards, stats, recent attendance
+│   │   ├── AttendancePage.tsx  # Attendance table + manual clock in/out
+│   │   ├── MarketsPage.tsx  # Grid view of 18 FCT markets
+│   │   ├── StaffPage.tsx    # Staff table + Excel/CSV nominal roll import
+│   │   ├── DevicesPage.tsx  # Device cards + ZKTeco + Bantech CSV import
+│   │   ├── AlertsPage.tsx   # Alert list with dismiss + filter
+│   │   ├── ActivityLogPage.tsx # Searchable audit log with CSV export
+│   │   ├── UsersPage.tsx    # Auth level assignment
+│   │   ├── SettingsPage.tsx # Attendance/payroll rules + JSON backup/restore
+│   │   ├── PayrollPage.tsx  # ⚠️ Placeholder — no real data operations
+│   │   ├── ReportsPage.tsx   # ⚠️ Placeholder — no real data operations
+│   │   └── AISalesPage.tsx  # ⚠️ Placeholder — no AI integration
+│   └── hooks/
+│       └── useStaffImport.ts # Excel/CSV import hook for nominal roll
 ├── server.ts              # Hono + Vite dev server
 ├── vite.config.ts
 └── package.json
@@ -59,10 +55,8 @@ amml/
 The legacy app used a single global `S = { markets: [...], staff: [...], att: [...], ... }` object. This has been replaced by a typed React Context + `useReducer`:
 
 ```tsx
-// Every component gets typed access:
 const { state, dispatch, navItems, roleConfig, isLoggedIn, can } = useApp();
 
-// Actions (all typed):
 dispatch({ type: 'ADD_STAFF', payload: newStaff });
 dispatch({ type: 'CLOCK_IN', payload: { staffId: 'AMML-001', clockIn: '08:15:00' } });
 dispatch({ type: 'AUDIT_LOG', payload: { action: 'LOGIN', detail: 'Staff ID AMML-001' } });
@@ -88,23 +82,24 @@ Key types in `src/types/models.ts`:
 - `PayrollRecord` — per-market payroll per period
 - `AILead` — AI Sales Suite pipeline
 
-## Migration Status
+## Feature Status
 
-| Feature | Legacy | React |
+| Feature | Status | Notes |
 |---------|--------|-------|
-| Login / Splash | ✅ | ✅ |
-| Dashboard (KPIs + table) | ✅ | ✅ |
-| Markets (grid view) | ✅ | ✅ |
-| Staff (table) | ✅ | ✅ |
-| Attendance (table + filter) | ✅ | ✅ |
-| Devices | ✅ | ✅ |
-| Payroll | ✅ | ✅ |
-| Reports | ✅ | ✅ |
-| AI Sales Suite | ✅ | ✅ |
-| ZKTeco import | ✅ | ⬜ |
-| Bantech import | ✅ | ⬜ |
-| Alert system | ✅ | ⬜ |
-| Activity log | ✅ | ⬜ |
+| Login / Splash | ✅ Working | Staff ID + optional password |
+| Dashboard (KPIs + table) | ✅ Working | Live stats from state |
+| Markets (grid view) | ✅ Working | All 18 FCT markets |
+| Staff (table + filter) | ✅ Working | Excel/CSV import via xlsx |
+| Attendance (table + filter) | ✅ Working | Date range, search, manual clock in/out |
+| My Attendance | ✅ Working | Officers see only their own records |
+| Devices (cards + import) | ✅ Working | ZKTeco + Bantech CSV parsers |
+| Alerts (dismiss + filter) | ✅ Working | AlertItem[] with dispatch |
+| Activity Log (search + export) | ✅ Working | CSV export, audit trail |
+| Users (role assignment) | ✅ Working | Updates staff authLevel + audit log |
+| Settings (rules + backup) | ✅ Working | Attendance/payroll rules, JSON restore |
+| Payroll | ⚠️ Placeholder | Shows info text only |
+| Reports | ⚠️ Placeholder | Shows info text only |
+| AI Sales Suite | ⚠️ Placeholder | No AI integration yet |
 
 ## Notes
 
@@ -120,7 +115,7 @@ Staff are **not enrolled manually** — they are created automatically when biom
 
 ```bash
 bun install
-bun run dev    # Vite dev server at localhost:5173
+bun run dev    # Vite dev server (served at localhost:54305 via Zo)
 bun run build  # Production build → dist/
 ```
 
@@ -137,3 +132,8 @@ Use the **"Import Nominal Roll"** button on the Staff page to bulk-upload staff 
 **AuthLevel values:** `SUPERADMIN`, `MD`, `MANAGER`, `SUPERVISOR`, `OFFICER`
 
 Duplicate AMML IDs (already registered staff) will be **updated** with the new data. New IDs will be **added** as active staff.
+
+## Known Issues
+
+- **Payroll, Reports, AI Sales Suite** are placeholder pages. No data operations are implemented for these modules.
+- **Biometric import** (ZKTeco/Bantech) works via CSV paste-and-preview, but does not yet support live device polling.

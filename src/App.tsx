@@ -12,8 +12,8 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import { SplashScreen, LoginScreen } from './components/SplashLogin';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
-import HomePage from './pages/HomePage';
 import Dashboard from './pages/Dashboard';
+import HomePage from './pages/HomePage';
 import AttendancePage from './pages/AttendancePage';
 import StaffPage from './pages/StaffPage';
 import MarketsPage from './pages/MarketsPage';
@@ -30,7 +30,7 @@ const PAGES: Record<string, React.ComponentType> = {
   dashboard: Dashboard,
   markets: MarketsPage,
   attendance: AttendancePage,
-  myatt: AttendancePage,
+  myatt: () => <AttendancePage isMyAtt={true} />,
   staff: StaffPage,
   devices: DevicesPage,
   reports: ReportsPage,
@@ -72,16 +72,19 @@ function AppShell() {
 function AppRouter() {
   const { state } = useApp();
 
-  switch (state.phase) {
-    case 'splash':
-      return <SplashScreen />;
-    case 'login':
-      return <LoginScreen />;
-    case 'app':
-      return state.user ? <AppShell /> : <LoginScreen />;
-    default:
-      return <HomePage />;
+  if (state.phase === 'splash') {
+    return <SplashScreen />;
   }
+
+  if (state.phase === 'login' || (state.phase === 'app' && !state.user)) {
+    return <LoginScreen />;
+  }
+
+  if (state.phase === 'app' && state.user) {
+    return <AppShell />;
+  }
+
+  return <HomePage />;
 }
 
 // ── Entry Point ───────────────────────────────────────────

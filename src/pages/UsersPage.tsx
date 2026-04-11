@@ -70,15 +70,17 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="page-header">
-      <div>
-        <h2>👑 User Management</h2>
-        <p style={{ color: 'var(--text2)', fontSize: 13 }}>Assign and manage auth levels for registered staff</p>
-      </div>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button className="btn btn-blue" onClick={() => setShowAdd(s => !s)}>
-          + Assign Role
-        </button>
+    <div className="page active">
+      <div className="ph">
+        <div>
+          <h2>👑 User Management</h2>
+          <p style={{ color: 'var(--text2)', fontSize: 13 }}>Assign and manage auth levels for registered staff</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-blue" onClick={() => setShowAdd(s => !s)}>
+            + Assign Role
+          </button>
+        </div>
       </div>
 
       {/* Add User Panel */}
