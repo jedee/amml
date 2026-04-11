@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { MARKETS } from '../data/markets';
 
 function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -75,7 +74,7 @@ export default function TopBar() {
           }}
         >
           <option>All Markets</option>
-          {MARKETS.map(m => (
+          {state.markets.map(m => (
             <option key={m.id} value={m.name}>{m.name}</option>
           ))}
         </select>
