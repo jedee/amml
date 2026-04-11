@@ -97,10 +97,10 @@ Key types in `src/types/models.ts`:
 | Markets (grid view) | ✅ | ✅ |
 | Staff (table) | ✅ | ✅ |
 | Attendance (table + filter) | ✅ | ✅ |
-| Devices | ✅ | ⬜ |
-| Payroll | ✅ | ⬜ |
-| Reports | ✅ | ⬜ |
-| AI Sales Suite | ✅ | ⬜ |
+| Devices | ✅ | ✅ |
+| Payroll | ✅ | ✅ |
+| Reports | ✅ | ✅ |
+| AI Sales Suite | ✅ | ✅ |
 | ZKTeco import | ✅ | ⬜ |
 | Bantech import | ✅ | ⬜ |
 | Alert system | ✅ | ⬜ |
