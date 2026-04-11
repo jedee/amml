@@ -62,6 +62,7 @@ const initialState: AppState = {
 
 type Action =
   | { type: 'LOGIN'; payload: User }
+  | { type: 'GO_TO_LOGIN' }
   | { type: 'LOGOUT' }
   | { type: 'SET_PASSWORD'; payload: { staffId: string; password: string } }
   | { type: 'SET_MARKET_FILTER'; payload: string }
@@ -106,7 +107,7 @@ function reducer(state: AppState, action: Action): AppState {
       }
       return { ...state, user: action.payload, phase: 'app' as const };
     }
-    case 'LOGOUT':
+    case 'LOGOUT': return { ...initialState, phase: 'splash' as const, staff: state.staff, markets: state.markets, devices: state.devices, att: state.att, settings: state.settings, zkMap: state.zkMap };
       return { ...initialState, phase: 'splash' };
 
     case 'SET_MARKET_FILTER':
