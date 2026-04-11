@@ -104,7 +104,7 @@ export default function AlertsPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {alerts.map(alert => {
-            const c = COLORS[alert.type] ?? COLORS.info;
+            const c = COLORS[(alert.type ?? 'info') as keyof typeof COLORS] ?? COLORS.info;
             return (
               <div
                 key={alert.id}
@@ -119,7 +119,7 @@ export default function AlertsPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ color: c.text, marginTop: 2, flexShrink: 0 }}>
-                    {ICONS[alert.type]}
+                    {ICONS[(alert.type ?? 'info') as keyof typeof ICONS]}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>

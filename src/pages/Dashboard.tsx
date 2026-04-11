@@ -1,60 +1,60 @@
 // ─────────────────────────────────────────────────────────────
-//  AMML — Dashboard Page
+//  AMML — Dashboard
 // ─────────────────────────────────────────────────────────────
-
 import React, { useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+
+function StatCard({ value, label, accent }: { value: string | number; label: string; accent: string }) {
+  return (
+    <div className="sr">
+      <div className="sr-val" style={{ color: accent }}>{value}</div>
+      <div className="sr-lbl">{label}</div>
+    </div>
+  );
+}
+
+function KpiCard({ val, label, icon, accent }: { val: number | string; label: string; icon: string; accent: string }) {
+  return (
+    <div className="kpi">
+      <div className="kpi-l">
+        <div className="kpi-icon" style={{ background: accent + '18', color: accent }}>{icon}</div>
+        <div>
+          <div className="kpi-val">{val}</div>
+          <div className="kpi-sub">{label}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { state } = useApp();
-  const { markets, staff, devices, att } = state;
-
-  const today = new Date().toISOString().split('T')[0];
+  const { markets, staff, devices, att, user } = state;
+  const today = new Date().toISOString().slice(0, 10);
   const todayRecs = useMemo(() => att.filter(r => r.date === today), [att, today]);
 
-  const kpis = useMemo(() => {
-    const activeStaff = staff.filter(s => s.active).length;
-    const activeDevices = devices.filter(d => d.active).length;
-    const onTimeToday = todayRecs.filter(r => !r.late).length;
-    const lateToday = todayRecs.filter(r => r.late).length;
-    const absentToday = staff.filter(s => s.active).length - todayRecs.length;
+  const kpis = useMemo(() => ({
+    activeStaff: staff.filter(s => s.active).length,
+    marketsCount: markets.filter(m => m.active).length,
+    onlineDevices: devices.filter(d => d.active).length,
+    onTime: todayRecs.filter(r => !r.late).length,
+    late: todayRecs.filter(r => r.late).length,
+    absent: Math.max(0, staff.filter(s => s.active).length - todayRecs.length),
+  }), [staff, markets, devices, todayRecs]);
 
-    return {
-      activeStaff,
-      activeDevices,
-      marketsCount: markets.filter(m => m.active).length,
-      todayOnTime: onTimeToday,
-      todayLate: lateToday,
-      todayAbsent: Math.max(0, absentToday),
-      totalClocks: todayRecs.length,
-    };
-  }, [staff, devices, markets, todayRecs]);
-
-  const recentAtt = useMemo(() =>
-    [...todayRecs]
-      .sort((a, b) => a.clockIn.localeCompare(b.clockIn))
-      .slice(0, 8),
-    [todayRecs]
-  );
-
-  const kpiCards = [
-    { val: kpis.activeStaff,  label: 'Active Staff',     icon: '👥', accent: '#0064B4' },
-    { val: kpis.marketsCount, label: 'Markets',          icon: '🏪', accent: '#DC6400' },
-    { val: kpis.activeDevices,label: 'Online Devices',   icon: '📱', accent: '#288C28' },
-    { val: kpis.todayOnTime,  label: 'On Time',          icon: '✅', accent: '#003C78' },
-    { val: kpis.todayLate,    label: 'Late Arrivals',     icon: '⚠️', accent: '#E8821A' },
-    { val: kpis.todayAbsent,  label: 'Absent',            icon: '❌', accent: '#C0392B' },
-  ];
+  const dateLabel = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="page active">
-      {/* Page header */}
-      <div className="ph">
-        <div className="ph-l">
-          <h2>Dashboard</h2>
-          <p>Abuja Markets Management Limited — {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="page-header-l">
+          <h1>Dashboard</h1>
+          <p>{user?.name} · {dateLabel}</p>
         </div>
-        <div className="ph-r">
+        <div className="page-header-r">
           <button className="btn btn-outline btn-sm">📊 Full Report</button>
           <button className="btn btn-blue btn-sm">🕐 Attendance</button>
         </div>
@@ -62,99 +62,84 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="kpi-grid">
-        {kpiCards.map(k => (
-          <div key={k.label} className="kpi">
-            <div className="kpi-l">
-              <div className="kpi-icon" style={{ background: `${k.accent}18`, color: k.accent }}>
-                {k.icon}
-              </div>
-              <div>
-                <div className="kpi-val">{k.val}</div>
-                <div className="kpi-sub">{k.label}</div>
-              </div>
-            </div>
-          </div>
-        ))}
+        <KpiCard val={kpis.activeStaff} label="Active Staff" icon="👥" accent="#0064B4" />
+        <KpiCard val={kpis.marketsCount} label="Markets" icon="🏪" accent="#DC6400" />
+        <KpiCard val={kpis.onlineDevices} label="Online Devices" icon="📱" accent="#288C28" />
+        <KpiCard val={kpis.onTime} label="On Time" icon="✅" accent="#003C78" />
+        <KpiCard val={kpis.late} label="Late Arrivals" icon="⚠️" accent="#E8821A" />
+        <KpiCard val={kpis.absent} label="Absent" icon="❌" accent="#C0392B" />
       </div>
 
-      {/* Stats row */}
+      {/* Stats Strip */}
       <div className="stats-row">
-        <div className="sr">
-          <div className="sr-val" style={{ color: 'var(--green-logo)' }}>{kpis.todayOnTime}</div>
-          <div className="sr-lbl">Clocked In</div>
-        </div>
-        <div className="sr">
-          <div className="sr-val" style={{ color: 'var(--orange)' }}>{kpis.todayLate}</div>
-          <div className="sr-lbl">Late</div>
-        </div>
-        <div className="sr">
-          <div className="sr-val">{kpis.totalClocks}</div>
-          <div className="sr-lbl">Total Events</div>
-        </div>
-        <div className="sr">
-          <div className="sr-val">{staff.length}</div>
-          <div className="sr-lbl">Total Staff</div>
-        </div>
+        <StatCard value={kpis.onTime} label="Clocked In" accent="var(--color-brand-green)" />
+        <StatCard value={kpis.late} label="Late" accent="var(--color-brand-orange)" />
+        <StatCard value={todayRecs.length} label="Total Events" accent="var(--color-brand-blue)" />
+        <StatCard value={staff.length} label="Total Staff" accent="var(--color-text)" />
       </div>
 
-      {/* Recent attendance */}
-      <div className="card">
-        <div className="card-head">
-          <div className="card-title">📋 Today's Attendance Log</div>
-          <span className="badge b-blue">{todayRecs.length} records</span>
-        </div>
-
-        {recentAtt.length === 0 ? (
-          <div className="empty-state">
-            <div className="es-icon">🕐</div>
-            <div className="es-title">No attendance records yet</div>
-            <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 6 }}>
-              Staff can clock in using biometric devices or the Attendance page.
-            </p>
-          </div>
-        ) : (
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Staff</th>
-                <th>Market</th>
-                <th>Clock In</th>
-                <th>Clock Out</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentAtt.map(r => (
-                <tr key={r.id}>
-                  <td style={{ fontWeight: 700 }}>{r.staffName}</td>
-                  <td style={{ fontSize: 12, color: 'var(--text3)' }}>{r.market}</td>
-                  <td>{r.clockIn}</td>
-                  <td>{r.clockOut || '—'}</td>
-                  <td>
-                    {r.late
-                      ? <span className="badge b-orange">⚠️ Late</span>
-                      : <span className="badge b-green">✅ On Time</span>
-                    }
-                  </td>
+      {/* Attendance Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Today's Attendance Log</CardTitle>
+          <CardAction>
+            <Badge variant="outline">{todayRecs.length} records</Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          {todayRecs.length === 0 ? (
+            <div className="empty-state">
+              <div className="es-icon">🕐</div>
+              <div className="es-title">No attendance records yet</div>
+              <p className="es-sub">Staff clock in using biometric devices or the Attendance page.</p>
+            </div>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Market</th>
+                  <th>Clock In</th>
+                  <th>Clock Out</th>
+                  <th>Duration</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {todayRecs.slice(0, 12).map(r => (
+                  <tr key={r.id}>
+                    <td className="fw-700">{r.staffName}</td>
+                    <td className="tbl-col-sm">{r.market}</td>
+                    <td className="tbl-col-mono">{r.clockIn || '—'}</td>
+                    <td className="tbl-col-mono">{r.clockOut || '—'}</td>
+                    <td className="tbl-col-mono">{r.duration || '—'}</td>
+                    <td>
+                      <Badge variant={r.late ? 'destructive' : 'secondary'}>
+                        {r.late ? '⚠️ Late' : '✅ On Time'}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Quick links */}
-      <div className="card">
-        <div className="card-head">
-          <div className="card-title">🚀 Quick Actions</div>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn btn-outline">➕ Add Staff</button>
-          <button className="btn btn-outline">📱 Register Device</button>
-          <button className="btn btn-outline">📊 View Reports</button>
-          <button className="btn btn-blue">🕐 Record Attendance</button>
-        </div>
-      </div>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mf">
+            <button className="btn btn-outline btn-sm">➕ Add Staff</button>
+            <button className="btn btn-outline btn-sm">📱 Register Device</button>
+            <button className="btn btn-outline btn-sm">📊 View Reports</button>
+            <button className="btn btn-blue btn-sm">🕐 Record Attendance</button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};

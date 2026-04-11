@@ -136,6 +136,10 @@ export interface AILead {
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 
 export interface AlertItem {
+  type?: string;
+  title?: string;
+  dismissed?: boolean;
+  staffId?: string;
   id: string;
   message: string;
   severity: AlertSeverity;
