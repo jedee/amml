@@ -56,11 +56,14 @@ export interface Staff {
 
 // ── Devices ────────────────────────────────────────────────
 export type DeviceType =
-  | 'Fingerprint Terminal'
-  | 'QR Code Scanner'
-  | 'RFID Card Reader'
-  | 'Face Recognition'
-  | 'PIN Pad';
+  | 'Realand AL325'
+  | 'Realand AL321'
+  | 'Realand AL365'
+  | 'Realand AL320'
+  | 'Realand BT-100'
+  | 'Realand IFACE'
+  | 'Realand QR-100'
+  | 'Other';
 
 export interface Device {
   id: string;

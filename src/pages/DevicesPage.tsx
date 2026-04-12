@@ -1,6 +1,6 @@
 // ────────────────────────────────────────────────
 //  AMML — Device Management Page
-//  AL325 (ZKTeco) + AL321 (Bantech) biometric import
+//  Realand AL325 (WiFi) + AL321 (Biometric) import
 // ────────────────────────────────────────────────
 import type { Device, DeviceType } from "../types/models";
 import { useApp } from "../contexts/AppContext";
@@ -96,12 +96,14 @@ function BiometricImport() {
   const [bio, setBio] = useState<'zk'|'bt'>('zk');
   const [zkFile, setZkFile] = useState<File|null>(null);
   const [zkPreview, setZkPreview] = useState<ZKRec[]>([]);
-  const [zkDev, setZkDev] = useState('ZKTeco AL325');
+  const [zkDev, setZkDev] = useState('Realand AL325');
   const [zkMkt, setZkMkt] = useState('');
   const [btFile, setBtFile] = useState<File|null>(null);
   const [btPreview, setBtPreview] = useState<BTRec[]>([]);
-  const [btDev, setBtDev] = useState('Bantech AL321');
+  const [btDev, setBtDev] = useState('Realand AL321');
+  const [open, setOpen] = useState(false);
   const { markets, staff, att, zkMap } = state;
+  const entries = Object.entries(zkMap);
   function onZKChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
     setZkFile(file);
@@ -340,10 +342,13 @@ export default function DevicesPage() {
               </div>
             ))}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>TYPE</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setNewDev({ ...newDev, type: "ZKTeco AL325" })} style={{ flex: 1, padding: "8px", borderRadius: "var(--r-sm)", border: newDev.type === "ZKTeco AL325" ? "2px solid var(--blue)" : "1.5px solid var(--border)", background: newDev.type === "ZKTeco AL325" ? "var(--surface3)" : "var(--surface)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, color: newDev.type === "ZKTeco AL325" ? "var(--blue)" : "var(--text2)" }}>ZKTeco AL325</button>
-                <button onClick={() => setNewDev({ ...newDev, type: "Bantech AL321" })} style={{ flex: 1, padding: "8px", borderRadius: "var(--r-sm)", border: newDev.type === "Bantech AL321" ? "2px solid var(--orange)" : "1.5px solid var(--border)", background: newDev.type === "Bantech AL321" ? "rgba(220,100,0,.06)" : "var(--surface)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, color: newDev.type === "Bantech AL321" ? "var(--orange)" : "var(--text2)" }}>Bantech AL321</button>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>DEVICE TYPE</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <button onClick={() => setNewDev({ ...newDev, type: "Realand AL325" })} style={{ padding: "8px 6px", borderRadius: "var(--r-sm)", border: newDev.type === "Realand AL325" ? "2px solid var(--blue)" : "1.5px solid var(--border)", background: newDev.type === "Realand AL325" ? "var(--surface3)" : "var(--surface)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 11, color: newDev.type === "Realand AL325" ? "var(--blue)" : "var(--text2)" }}>📶 AL325 WiFi</button>
+                <button onClick={() => setNewDev({ ...newDev, type: "Realand AL321" })} style={{ padding: "8px 6px", borderRadius: "var(--r-sm)", border: newDev.type === "Realand AL321" ? "2px solid var(--orange)" : "1.5px solid var(--border)", background: newDev.type === "Realand AL321" ? "rgba(220,100,0,.06)" : "var(--surface)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 11, color: newDev.type === "Realand AL321" ? "var(--orange)" : "var(--text2)" }}>🔌 AL321 Wired</button>
+              </div>
+              <div style={{ marginTop: 6, fontSize: 10.5, color: "var(--text3)", lineHeight: 1.4 }}>
+                AL325: WiFi + TCP/IP + USB · AL321: TCP/IP + USB only
               </div>
             </div>
             <div style={{ marginBottom: 18 }}>
