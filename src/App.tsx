@@ -7,7 +7,7 @@
 //
 //  Root / serves the full React app; /app serves the legacy vanilla JS app.
 // ─────────────────────────────────────────────────────────────
-import React from 'react';
+import React, { useState } from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { SplashScreen, LoginScreen } from './components/SplashLogin';
 import TopBar from './components/TopBar';
@@ -45,14 +45,14 @@ const PAGES: Record<string, React.ComponentType> = {
 // ── Authenticated Shell ────────────────────────────────────
 function AppShell() {
   const { state } = useApp();
-  const [currentPage, setCurrentPage] = React.useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   return (
     <div id="app" className="visible">
       <TopBar />
       <div className="shell">
         <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-        <main className="main">
+        <main className="main" key={currentPage}>
           {PAGES[currentPage]
             ? React.createElement(PAGES[currentPage])
             : (
