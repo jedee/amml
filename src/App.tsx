@@ -46,13 +46,19 @@ const PAGES: Record<string, React.ComponentType> = {
 function AppShell() {
   const { state } = useApp();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [pageKey, setPageKey] = useState(0);
+
+  const navigate = (page: string) => {
+    setCurrentPage(page);
+    setPageKey(k => k + 1);
+  };
 
   return (
     <div id="app" className="visible">
       <TopBar />
       <div className="shell">
-        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-        <main className="main" key={currentPage}>
+        <Sidebar currentPage={currentPage} onNavigate={navigate} />
+        <main className="main" key={`${currentPage}-${pageKey}`}>
           {PAGES[currentPage]
             ? React.createElement(PAGES[currentPage])
             : (
