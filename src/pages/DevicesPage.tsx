@@ -50,7 +50,13 @@ function DeviceCard({ dev, onDelete }: { dev: Device; onDelete: (id: string) => 
     setOpen(false);
   }
   return (
-    <div style={{ background: "var(--surface)", borderRadius: "var(--r)", padding: 18, border: "1.5px solid var(--border)", boxShadow: "var(--shadow)" }}>
+    <div style={{
+      background: "#ffffff",
+      borderRadius: "var(--r)",
+      padding: 18,
+      border: "1.5px solid #d0dbe8",
+      boxShadow: "0 2px 12px rgba(0,40,80,.08)",
+    }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <div style={{ width: 44, height: 44, borderRadius: 10, background: dev.active ? "rgba(40,140,40,.1)" : "var(--surface3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{dev.active ? "📱" : "📴"}</div>
