@@ -44,20 +44,64 @@ function DeviceCard({ dev, onDelete }: { dev: Device; onDelete: (id: string) => 
   const { dispatch } = useApp();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [zkPreview, setZkPreview] = useState<ZKRec[]>([]);
+  const [zkFile, setZkFile] = useState<File | null>(null);
+
+  const { staff, att, zkMap } = useApp().state;
+
   function toggle() {
     dispatch({ type: 'UPDATE_DEVICE', payload: { ...dev, active: !dev.active, lastSeen: !dev.active ? 'Just now' : dev.lastSeen } });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'TOGGLE_DEVICE', detail: dev.name + ' ' + (!dev.active ? 'online' : 'offline') } });
     setOpen(false);
   }
+
+  function onZKChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return;
+    setZkFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const rows = parseZK((ev.target?.result as string) || '');
+      rows.forEach(r => {
+        const m = staff.find(s => s.id === r.zkId || s.id.startsWith(r.zkId));
+        if (m) { r.staffId = m.id; r.ammlId = m.id; }
+        else { const zm = Object.entries(zkMap).find(([, v]) => v === r.zkId); if (zm) { r.ammlId = zm[0]; } }
+      });
+      setZkPreview(rows);
+    };
+    reader.readAsText(file);
+  }
+
+  function syncZK() {
+    let n = 0;
+    zkPreview.forEach(r => {
+      const sid = r.ammlId || Object.entries(zkMap).find(([, v]) => v === r.zkId)?.[0];
+      if (!sid) return;
+      const sf = staff.find(s => s.id === sid); if (!sf) return;
+      const ex = att.find(a => a.date === r.date && a.staffId === sid);
+      if (r.inOut === 'In' && !ex) { const late = r.time > '08:15'; const entry = { id: 'a' + Date.now() + Math.random().toString(36).slice(2), staffId: sid, staffName: sf.first + ' ' + sf.last, market: dev.market, dept: sf.dept, date: r.date, clockIn: r.time, clockOut: '', device: dev.name, late, duration: null }; dispatch({ type: 'ADD_ATTENDANCE', payload: entry }); n++; }
+      else if (r.inOut === 'Out' && ex) { dispatch({ type: 'UPDATE_ATT', payload: { ...ex, clockOut: r.time } }); n++; }
+    });
+    dispatch({ type: 'AUDIT_LOG', payload: { action: 'ZK_SYNC', detail: `${dev.name}: ${n} records` } });
+    setZkPreview([]); setZkFile(null);
+    alert(`${dev.name}: ${n} records synced`);
+    setOpen(false);
+  }
+
+  const recentClocks = att.filter(a => a.device === dev.name).slice(-5);
+  const lastSync = dev.lastSeen;
+
   return (
     <div style={{
       background: "#ffffff",
       borderRadius: "var(--r)",
-      padding: 18,
+      padding: open ? 0 : 18,
       border: "1.5px solid #d0dbe8",
       boxShadow: "0 2px 12px rgba(0,40,80,.08)",
+      overflow: "hidden",
+      transition: "padding 0.2s",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      {/* Always-visible header */}
+      <div style={{ padding: open ? 0 : 18, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <div style={{ width: 44, height: 44, borderRadius: 10, background: dev.active ? "rgba(40,140,40,.1)" : "var(--surface3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{dev.active ? "📱" : "📴"}</div>
           <div>
@@ -73,24 +117,88 @@ function DeviceCard({ dev, onDelete }: { dev: Device; onDelete: (id: string) => 
           </div>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "14px 0", fontSize: 12 }}>
-        <div style={{ padding: "8px 10px", background: "var(--surface2)", borderRadius: 8 }}><div style={{ color: "var(--text3)", fontSize: 10, fontWeight: 700 }}>TYPE</div><div style={{ fontWeight: 600, marginTop: 2 }}>{dev.type}</div></div>
-        <div style={{ padding: "8px 10px", background: "var(--surface2)", borderRadius: 8 }}><div style={{ color: "var(--text3)", fontSize: 10, fontWeight: 700 }}>LOCATION</div><div style={{ fontWeight: 600, marginTop: 2 }}>{dev.location}</div></div>
-        <div style={{ padding: "8px 10px", background: "var(--surface2)", borderRadius: 8 }}><div style={{ color: "var(--text3)", fontSize: 10, fontWeight: 700 }}>SERIAL</div><div style={{ fontWeight: 600, marginTop: 2, fontFamily: "monospace", fontSize: 11 }}>{dev.serial}</div></div>
-        <div style={{ padding: "8px 10px", background: "var(--surface2)", borderRadius: 8 }}><div style={{ color: "var(--text3)", fontSize: 10, fontWeight: 700 }}>TODAY</div><div style={{ fontWeight: 600, marginTop: 2 }}>{dev.clocksToday} clocks</div></div>
+
+      {/* Always-visible action row */}
+      <div style={{ padding: "0 18px 14px", display: "flex", gap: 7, flexWrap: "wrap", background: "var(--surface2)", borderTop: "1px solid var(--border)" }}>
+        <button onClick={() => setOpen(!open)} style={{ flex: "1 1 calc(50% - 4px)", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", background: open ? "var(--surface3)" : "var(--surface)", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit", color: "var(--text2)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          {open ? <span>▲ Close</span> : <><span>📥</span> Import Logs</>}
+        </button>
+        <button onClick={toggle} style={{ flex: "1 1 calc(50% - 4px)", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "none", background: dev.active ? "#C0392B" : "var(--green-logo)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+          {dev.active ? "⏸ Deactivate" : "▶ Activate"}
+        </button>
       </div>
-      <button onClick={() => setOpen(!open)} style={{ marginTop: 4, width: "100%", padding: "7px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", background: "var(--surface2)", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit", color: "var(--text2)" }}>{open ? "▲ Hide Actions" : "▼ Actions"}</button>
+
+      {/* Expanded panel */}
       {open && (
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-          <button onClick={toggle} style={{ padding: "8px 12px", borderRadius: "var(--r-sm)", border: "none", background: dev.active ? "#C0392B" : "var(--green-logo)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{dev.active ? "Deactivate" : "Activate"}</button>
-          {confirm ? (
-            <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => { onDelete(dev.id); setConfirm(false); }} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "none", background: "#C0392B", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Confirm</button>
-              <button onClick={() => setConfirm(false)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", background: "var(--surface2)", color: "var(--text2)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        <div style={{ borderTop: "1.5px solid var(--border)" }}>
+          {/* Stats row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, borderBottom: "1px solid var(--border)" }}>
+            {[{ label: "TYPE", value: dev.type }, { label: "SERIAL", value: dev.serial }, { label: "TODAY", value: dev.clocksToday + " clocks" }].map(({ label, value }) => (
+              <div key={label} style={{ padding: "10px 14px", borderRight: "1px solid var(--border)" }}>
+                <div style={{ color: "var(--text3)", fontSize: 10, fontWeight: 700 }}>{label}</div>
+                <div style={{ fontWeight: 600, marginTop: 2, fontFamily: label === "SERIAL" ? "monospace" : "inherit", fontSize: label === "TYPE" ? 12 : 11 }}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Recent clock events for this device */}
+          {recentClocks.length > 0 && (
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", marginBottom: 6 }}>RECENT EVENTS</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {recentClocks.map((a, i) => (
+                  <div key={i} style={{ fontSize: 11, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontFamily: "monospace" }}>{a.date}</span>
+                    <span style={{ fontFamily: "monospace" }}>{a.clockIn}{a.clockOut ? ' → ' + a.clockOut : ' → —'}</span>
+                    <span style={{ color: a.late ? "#C0392B" : "var(--green-logo)", fontWeight: 600, fontSize: 10 }}>{a.late ? "LATE" : "OK"}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <button onClick={() => setConfirm(true)} style={{ padding: "8px 12px", borderRadius: "var(--r-sm)", border: "1.5px solid #C0392B", background: "transparent", color: "#C0392B", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Delete Device</button>
           )}
+
+          {/* Import section */}
+          <div style={{ padding: "14px", background: "var(--surface2)" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: "var(--text2)" }}>📂 Import CSV from {dev.name}</div>
+            <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: "2px dashed var(--border)", borderRadius: "var(--r-sm)", cursor: "pointer", background: "var(--surface)", marginBottom: 10 }}>
+              <span style={{ fontSize: 20, marginBottom: 6 }}>📄</span>
+              <span style={{ fontWeight: 600, fontSize: 12 }}>{zkFile ? zkFile.name : `Select CSV from ${dev.name}`}</span>
+              <input type="file" accept=".csv" onChange={onZKChange} style={{ display: "none" }} />
+            </label>
+
+            {zkPreview.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 6 }}>
+                  {zkPreview.length} records — {zkPreview.filter(r => r.ammlId).length} matched, {zkPreview.filter(r => !r.ammlId).length} unmapped
+                </div>
+                <div style={{ maxHeight: 120, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 6 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
+                    <thead><tr style={{ background: "var(--surface3)" }}><th style={{ padding: "4px 8px", textAlign: "left" }}>ZK ID</th><th style={{ padding: "4px 8px", textAlign: "left" }}>Staff</th><th style={{ padding: "4px 8px", textAlign: "left" }}>Time</th><th style={{ padding: "4px 8px", textAlign: "left" }}>I/O</th></tr></thead>
+                    <tbody>
+                      {zkPreview.slice(0, 6).map((r, i) => { const sf = staff.find(s => s.id === r.ammlId); return <tr key={i} style={{ borderTop: "1px solid var(--border)" }}><td style={{ padding: "4px 8px", fontFamily: "monospace" }}>{r.zkId}</td><td style={{ padding: "4px 8px" }}>{sf ? sf.first + " " + sf.last : <span style={{ color: "var(--orange)" }}>—</span>}</td><td style={{ padding: "4px 8px", fontFamily: "monospace" }}>{r.time}</td><td style={{ padding: "4px 8px", color: r.inOut === "In" ? "var(--green-logo)" : "var(--blue)", fontWeight: 700 }}>{r.inOut}</td></tr>; })}
+                    </tbody>
+                  </table>
+                </div>
+                <button onClick={syncZK} style={{ marginTop: 8, width: "100%", padding: "8px", borderRadius: "var(--r-sm)", border: "none", background: "var(--blue)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                  Sync to {dev.market}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Footer actions */}
+          <div style={{ padding: "10px 14px", display: "flex", gap: 8 }}>
+            {confirm ? (
+              <div style={{ flex: 1, display: "flex", gap: 6 }}>
+                <button onClick={() => { onDelete(dev.id); setConfirm(false); }} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "none", background: "#C0392B", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Confirm Delete</button>
+                <button onClick={() => setConfirm(false)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", background: "var(--surface)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirm(true)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1.5px solid #C0392B", background: "transparent", color: "#C0392B", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                Delete Device
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -178,7 +286,7 @@ function BiometricImport() {
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>DEVICE NAME</label><input value={zkDev} onChange={e => setZkDev(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", fontFamily: "inherit", fontSize: 13 }} /></div>
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>MARKET</label><select value={zkMkt} onChange={e => setZkMkt(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", fontFamily: "inherit", fontSize: 13 }}><option value="">Auto-detect</option>{markets.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}</select></div>
           </div>
-          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: "var(--r)", cursor: "pointer", marginBottom: 12, background: "var(--surface2)" }}>
+          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: "var(--r-sm)", cursor: "pointer", background: "var(--surface2)", marginBottom: 12 }}>
             <span style={{ fontSize: 24, marginBottom: 8 }}>📂</span>
             <span style={{ fontWeight: 600, fontSize: 13 }}>{zkFile ? zkFile.name : "Click to select AL325 CSV"}</span>
             <input type="file" accept=".csv" onChange={onZKChange} style={{ display: "none" }} />
@@ -199,7 +307,7 @@ function BiometricImport() {
       ) : (
         <div>
           <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>DEVICE NAME</label><input value={btDev} onChange={e => setBtDev(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", fontFamily: "inherit", fontSize: 13 }} /></div>
-          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: "var(--r)", cursor: "pointer", marginBottom: 12, background: "var(--surface2)" }}>
+          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: "var(--r-sm)", cursor: "pointer", background: "var(--surface2)", marginBottom: 12 }}>
             <span style={{ fontSize: 24, marginBottom: 8 }}>📂</span>
             <span style={{ fontWeight: 600, fontSize: 13 }}>{btFile ? btFile.name : "Click to select AL321 CSV"}</span>
             <input type="file" accept=".csv" onChange={onBTChange} style={{ display: "none" }} />
