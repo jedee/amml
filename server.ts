@@ -93,13 +93,30 @@ async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
     if (result) {
       return new Response(result.code, {
         headers: {
-          "Content-Type": "application/javascript",
+          "Content-Type": url.endsWith('.css') ? 'text/css' : 'application/javascript',
           "Cache-Control": "no-store, must-revalidate",
         },
       });
     }
 
-    return c.text("Not found", 404);
+    // Serve pre-built assets (from last production build) if available
+    if (url.startsWith('/assets/')) {
+      const file = Bun.file(`./dist${url}`);
+      if (await file.exists()) {
+        const ext = url.split('.').pop() ?? '';
+        const ct = ext === 'js' ? 'application/javascript' : ext === 'css' ? 'text/css' : '';
+        return new Response(file, { headers: ct ? { 'Content-Type': ct } : {} });
+      }
+    }
+
+    // SPA fallback — serve index.html
+    const index = Bun.file('./dist/index.html');
+    if (await index.exists()) {
+      return new Response(index, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+    return c.text('AMML not found', 404);
   });
 
   return vite;
