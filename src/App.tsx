@@ -50,7 +50,7 @@ function AppShell() {
 
   const navigate = (page: string) => {
     setCurrentPage(page);
-    setPageKey(k => k + 1);
+    setPageKey(Date.now());
   };
 
   return (
