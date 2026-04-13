@@ -21,10 +21,21 @@ function parseZK(t: string): ZKRec[] {
     const di = fi('date','punchdate','attendancedate','datetime');
     const ti = fi('time','punchtime','checktime');
     const si = fi('inout','status','punchstate','direction','type');
-    let ds = (v[di >= 0 ? di : 0] || '').split(' ')[0].replace(/\//g,'-');
-    if (/^\d{2}-\d{2}-\d{4}$/.test(ds)) { const [d,m,y] = ds.split('-'); ds = y+'-'+m+'-'+d; }
+    let ds = (v[di >= 0 ? di : 0] || '').split(' ')[0].trim();
+    // Normalize to YYYY-MM-DD — handle DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD
+    const parts = ds.replace(/\//g,'-').split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        ds = parts.join('-'); // already YYYY-MM-DD
+      } else if (parts[2].length === 4) {
+        ds = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`; // DD-MM-YYYY or DD/MM/YYYY
+      }
+    }
+    let ts = (v[ti >= 0 ? ti : 1] || '').trim();
+    // Normalize time to HH:MM:SS
+    if (/^\d{1,2}:\d{2}$/.test(ts)) ts = ts + ':00';
     const sv = (v[si >= 0 ? si : 2] || '').toLowerCase();
-    return { zkId: v[zi >= 0 ? zi : 0] || '', date: ds, time: v[ti >= 0 ? ti : 1] || '', inOut: (sv.includes('out') || sv === '1') ? 'Out' as const : 'In' as const } as ZKRec;
+    return { zkId: v[zi >= 0 ? zi : 0] || '', date: ds, time: ts, inOut: (sv.includes('out') || sv === '1') ? 'Out' as const : 'In' as const } as ZKRec;
   }).filter(r => r.zkId && r.date);
 }
 
@@ -40,19 +51,19 @@ function parseBT(t: string): BTRec[] {
   }).filter(r => r.name);
 }
 
-function DeviceCard({ dev, onDelete }: { dev: Device; onDelete: (id: string) => void }) {
+function DeviceCard({ dev, onDelete, onImport }: { dev: Device; onDelete: (id: string) => void; onImport: (file: File) => void }) {
   const { dispatch } = useApp();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [zkPreview, setZkPreview] = useState<ZKRec[]>([]);
   const [zkFile, setZkFile] = useState<File | null>(null);
+  const [zkMkt, setZkMkt] = useState('');
 
   const { staff, att, zkMap } = useApp().state;
 
   function toggle() {
     dispatch({ type: 'UPDATE_DEVICE', payload: { ...dev, active: !dev.active, lastSeen: !dev.active ? 'Just now' : dev.lastSeen } });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'TOGGLE_DEVICE', detail: dev.name + ' ' + (!dev.active ? 'online' : 'offline') } });
-    setOpen(false);
   }
 
   function onZKChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -78,7 +89,7 @@ function DeviceCard({ dev, onDelete }: { dev: Device; onDelete: (id: string) => 
       if (!sid) return;
       const sf = staff.find(s => s.id === sid); if (!sf) return;
       const ex = att.find(a => a.date === r.date && a.staffId === sid);
-      if (r.inOut === 'In' && !ex) { const late = r.time > '08:15'; const entry = { id: 'a' + Date.now() + Math.random().toString(36).slice(2), staffId: sid, staffName: sf.first + ' ' + sf.last, market: dev.market, dept: sf.dept, date: r.date, clockIn: r.time, clockOut: '', device: dev.name, late, duration: null }; dispatch({ type: 'ADD_ATTENDANCE', payload: entry }); n++; }
+      if (r.inOut === 'In' && !ex) { const late = r.time > '08:15'; const entry = { id: 'a' + Date.now() + Math.random().toString(36).slice(2), staffId: sid, staffName: sf.first + ' ' + sf.last, market: zkMkt || dev.market, dept: sf.dept, date: r.date, clockIn: r.time, clockOut: '', device: dev.name, late, duration: null }; dispatch({ type: 'ADD_ATTENDANCE', payload: entry }); n++; }
       else if (r.inOut === 'Out' && ex) { dispatch({ type: 'UPDATE_ATT', payload: { ...ex, clockOut: r.time } }); n++; }
     });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'ZK_SYNC', detail: `${dev.name}: ${n} records` } });
@@ -407,7 +418,7 @@ function BiometricImport() {
 export default function DevicesPage() {
   const { state, dispatch } = useApp();
   const [showAdd, setShowAdd] = useState(false);
-  const [newDev, setNewDev] = useState({ name: "", type: "ZKTeco AL325", serial: "", location: "", market: "" });
+  const [newDev, setNewDev] = useState({ name: "", type: "Realand AL325", serial: "", location: "", market: "" });
   const [mktFilter, setMktFilter] = useState("");
   const { markets, devices, staff, att } = state;
   const today = new Date().toISOString().slice(0, 10);
@@ -418,7 +429,7 @@ export default function DevicesPage() {
     const dev: Device = { id: "d"+Date.now(), ...newDev, active: true, lastSeen: "Just now", clocksToday: 0, type: newDev.type as DeviceType };
     dispatch({ type: 'ADD_DEVICE', payload: dev });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'ADD_DEVICE', detail: newDev.name } });
-    setNewDev({ name: "", type: "ZKTeco AL325", serial: "", location: "", market: "" });
+    setNewDev({ name: "", type: "Realand AL325", serial: "", location: "", market: "" });
     setShowAdd(false);
   }
   function deleteDevice(id: string) {
