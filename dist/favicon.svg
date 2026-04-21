@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160">
+  <rect width="220" height="160" fill="#000028"/>
+  <polygon points="10,10 100,10 60,80" fill="#0064B4"/>
+  <polygon points="100,10 190,10 130,80" fill="#DC6400"/>
+  <rect x="10" y="85" width="180" height="22" rx="4" fill="#288C28"/>
+  <text x="110" y="100" text-anchor="middle" fill="white" font-size="9" font-weight="700" font-family="sans-serif" letter-spacing="2">WE DELIVER VALUE</text>
+  <text x="110" y="145" text-anchor="middle" fill="white" font-size="13" font-weight="800" font-family="sans-serif" letter-spacing="3">ABUJA MARKETS</text>
+</svg>
