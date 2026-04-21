@@ -25,9 +25,12 @@ jobs:
         with:
           bun-version: latest
       - name: Install
-        run: bun install
+        run: rm -rf node_modules && bun install
       - name: Build
         run: bun run build
+      - name: Verify build output
+        run: |
+          echo "=== dist/index.html ===" && cat dist/index.html && echo "=== dist/assets ===" && ls dist/assets/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
