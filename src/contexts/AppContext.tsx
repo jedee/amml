@@ -299,6 +299,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
                      // and the cleanup (else branch) runs BEFORE the new effect —
                      // so a timer can only fire if phase was and remains 'splash'
 
+  // Boot: fetch live data from SQLite API, fall back to seed on failure
+  useEffect(() => {
+    async function loadLiveData() {
+      const [mr, sr, dr, ar] = await Promise.allSettled([
+        fetch('/api/amml/markets').then(r => r.json()).catch(() => null),
+        fetch('/api/amml/staff').then(r => r.json()).catch(() => null),
+        fetch('/api/amml/devices').then(r => r.json()).catch(() => null),
+        fetch('/api/amml/attendance').then(r => r.json()).catch(() => null),
+      ]);
+
+      const markets = mr.status === 'fulfilled' && mr.value?.markets ? mr.value.markets : [...MARKETS];
+      const staff = sr.status === 'fulfilled' && sr.value?.staff ? sr.value.staff : [...STAFF];
+      const devices = dr.status === 'fulfilled' && dr.value?.devices ? dr.value.devices : [...DEVICES];
+      const att = ar.status === 'fulfilled' && ar.value?.attendance ? ar.value.attendance : SEED_ATTENDANCE;
+
+      dispatch({ type: 'LOAD_STATE', payload: { markets, staff, devices, att } });
+    }
+
+    loadLiveData();
+  }, []);
+
   return (
     <AppContext.Provider value={{ state, dispatch, navItems, currentRole, authLevels, levelLabels, isLoggedIn, can }}>
       {children}

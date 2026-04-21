@@ -5,6 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useStaffImport } from '../hooks/useStaffImport';
+import { apiAddStaff, apiUpdateStaff } from '../api/amml';
 import type { AuthLevel, Staff } from '../types/models';
 
 // ── Add-Staff Modal ─────────────────────────────────────────
@@ -76,6 +77,7 @@ function AddStaffModal({ onClose }: { onClose: () => void }) {
     };
     dispatch({ type: 'ADD_STAFF', payload: staff });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'CREATE', detail: `Staff ${id} (${staff.first} ${staff.last}) enrolled manually` } });
+    apiAddStaff(staff).catch(() => {}); // persist to SQLite
     onClose();
   };
 
@@ -239,7 +241,7 @@ function EditStaffModal({ staff, onClose }: { staff: Staff; onClose: () => void 
     e.preventDefault();
     if (!validate()) return;
     const id = form.id.trim().toUpperCase().replace(/\s+/g, '');
-    const staff: Staff = {
+    const updatedStaff: Staff = {
       id,
       first: form.first.trim(),
       last: form.last.trim(),
@@ -251,8 +253,9 @@ function EditStaffModal({ staff, onClose }: { staff: Staff; onClose: () => void 
       authLevel: form.authLevel,
       active: form.active,
     };
-    dispatch({ type: 'UPDATE_STAFF', payload: staff });
-    dispatch({ type: 'AUDIT_LOG', payload: { action: 'UPDATE', detail: `Staff ${id} (${staff.first} ${staff.last}) updated` } });
+    dispatch({ type: 'UPDATE_STAFF', payload: updatedStaff });
+    dispatch({ type: 'AUDIT_LOG', payload: { action: 'UPDATE', detail: `Staff ${id} updated` } });
+    apiUpdateStaff(updatedStaff).catch(() => {}); // persist to SQLite
     onClose();
   };
 
@@ -270,7 +273,7 @@ function EditStaffModal({ staff, onClose }: { staff: Staff; onClose: () => void 
         {/* Modal Header */}
         <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>👤 Edit Staff</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>✏️ Edit Staff</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>Update details for {staff.first} {staff.last}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text3)', padding: 4, lineHeight: 1 }}>✕</button>

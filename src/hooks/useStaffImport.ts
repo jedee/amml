@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 import { useState, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { apiAddStaff, apiUpdateStaff } from '../api/amml';
 import type { AuthLevel } from '../types/models';
 
 interface ParsedStaff {
@@ -106,11 +107,21 @@ export function useStaffImport() {
     preview.forEach(s => {
       const existing = state.staff.find(x => x.id === s.id);
       if (existing) {
-        dispatch({ type: 'UPDATE_STAFF', payload: { ...existing, ...s } });
-        updated++;
+        apiUpdateStaff({ ...existing, ...s }).then(() => {
+          dispatch({ type: 'UPDATE_STAFF', payload: { ...existing, ...s } });
+          updated++;
+        }).catch(() => {
+          dispatch({ type: 'UPDATE_STAFF', payload: { ...existing, ...s } });
+          updated++;
+        });
       } else {
-        dispatch({ type: 'ADD_STAFF', payload: { ...s, active: true } });
-        added++;
+        apiAddStaff({ ...s, active: true }).then(() => {
+          dispatch({ type: 'ADD_STAFF', payload: { ...s, active: true } });
+          added++;
+        }).catch(() => {
+          dispatch({ type: 'ADD_STAFF', payload: { ...s, active: true } });
+          added++;
+        });
       }
     });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'IMPORT', detail: `Staff Excel: ${added} added, ${updated} updated` } });

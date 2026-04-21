@@ -3,6 +3,7 @@ import type { ViteDevServer } from "vite";
 import { createServer as createViteServer } from "vite";
 import config from "./zosite.json";
 import { Hono } from "hono";
+import ammlApi from "./src/routes/amml-api";
 
 type Mode = "development" | "production";
 const app = new Hono();
@@ -26,12 +27,44 @@ export default { fetch: app.fetch, port, idleTimeout: 255 };
 
 // ── Production ─────────────────────────────────────────────
 function configureProduction(app: Hono) {
+  // AbujaStays at /stays — strip /stays prefix, look in dist
+  app.use("/stays/assets/*", async (c) => {
+    const filePath = c.req.path.replace(/^\/stays/, "");
+    const file = Bun.file(`/home/workspace/abuja-stays/dist${filePath}`);
+    if (await file.exists()) {
+      const ext = (filePath.split(".").pop() ?? "");
+      const ct = ext === "css" ? "text/css" : (ext === "js" || ext === "mjs") ? "application/javascript" : "";
+      return new Response(file, { headers: ct ? { "Content-Type": ct } : {} });
+    }
+    return c.text("Not found", 404);
+  });
+  app.use("/stays/*", async (c, next) => {
+    const raw = c.req.path;
+    const filePath = raw.replace(/^\/stays/, "") || "/index.html";
+    const file = Bun.file(`/home/workspace/abuja-stays/dist${filePath}`);
+    if (await file.exists()) {
+      const ext = (filePath.split(".").pop() ?? "");
+      const ct = ext === "css" ? "text/css" : (ext === "js" || ext === "mjs") ? "application/javascript" : "text/html; charset=utf-8";
+      return new Response(file, { headers: { "Content-Type": ct } });
+    }
+    return new Response(Bun.file("/home/workspace/abuja-stays/dist/index.html"), {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  });
+
+  // Redirect /abuja-stays/* → /stays/* (keeps GitHub Pages links working)
+  app.use("/abuja-stays/*", async (c) => {
+    const path = c.req.path.replace(/^\/abuja-stays/, "/stays");
+    return c.redirect(path, 302);
+  });
+
   app.use("/assets/*", serveStatic({ root: "./dist" }));
   app.get("/favicon.ico", (c) => c.redirect("/favicon.svg", 302));
+  app.use("/api/amml/*", ammlApi.fetch);
   app.use("*", async (c, next) => {
     if (c.req.method !== "GET") return next();
     const path = c.req.path;
-    if (path.startsWith("/api/") || path.startsWith("/assets/")) return next();
+    if (path.startsWith("/api/") || path.startsWith("/assets/") || path.startsWith("/stays/")) return next();
     // Serve React app for root
     if (path === "/" || path === "") {
       const distIndex = Bun.file("./dist/index.html");
@@ -65,8 +98,8 @@ async function configureDevelopment(app: Hono): Promise<ViteDevServer> {
     appType: "custom",
   });
 
+  app.use("/api/amml/*", ammlApi.fetch);
   app.use("*", async (c, next) => {
-    if (c.req.path.startsWith("/api/")) return next();
     if (c.req.path === "/favicon.ico") return c.redirect("/favicon.svg", 302);
 
     const url = c.req.path;

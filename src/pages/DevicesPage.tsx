@@ -4,6 +4,7 @@
 // ────────────────────────────────────────────────
 import type { Device, DeviceType } from "../types/models";
 import { useApp } from "../contexts/AppContext";
+import { apiAddDevice, apiDeleteDevice, apiUpdateDevice } from '../api/amml';
 import { useState } from "react";
 
 interface ZKRec { zkId: string; date: string; time: string; inOut: "In"|"Out"; staffId?: string; ammlId?: string }
@@ -64,6 +65,7 @@ function DeviceCard({ dev, onDelete, onImport }: { dev: Device; onDelete: (id: s
   function toggle() {
     dispatch({ type: 'UPDATE_DEVICE', payload: { ...dev, active: !dev.active, lastSeen: !dev.active ? 'Just now' : dev.lastSeen } });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'TOGGLE_DEVICE', detail: dev.name + ' ' + (!dev.active ? 'online' : 'offline') } });
+    apiUpdateDevice({ ...dev, active: !dev.active }).catch(() => {});
   }
 
   function onZKChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -429,12 +431,14 @@ export default function DevicesPage() {
     const dev: Device = { id: "d"+Date.now(), ...newDev, active: true, lastSeen: "Just now", clocksToday: 0, type: newDev.type as DeviceType };
     dispatch({ type: 'ADD_DEVICE', payload: dev });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'ADD_DEVICE', detail: newDev.name } });
+    apiAddDevice(dev).catch(() => {});
     setNewDev({ name: "", type: "Realand AL325", serial: "", location: "", market: "" });
     setShowAdd(false);
   }
   function deleteDevice(id: string) {
     dispatch({ type: 'DELETE_DEVICE', payload: id });
     dispatch({ type: 'AUDIT_LOG', payload: { action: 'DELETE_DEVICE', detail: id } });
+    apiDeleteDevice(id).catch(() => {});
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>

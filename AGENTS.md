@@ -69,8 +69,15 @@ This codebase is undergoing a **gradual rewrite into React + TypeScript** to uni
 - shadcn/ui components already scaffolded but unused
 
 ### Data Persistence Strategy
-- **Phase 1-2**: localStorage via the existing `dbSave()`/`dbLoad()` pattern
-- **Phase 3**: Migrate to IndexedDB or Bun SQLite backend via API routes
+- **Phase 1 (DEPRECATED):** localStorage via `dbSave()`/`dbLoad()` — removed ✅
+- **Phase 2 ✅ — SQLite backend:** `src/db/database.ts` + `src/routes/amml-api.ts`
+  - `bun:sqlite` (built-in, zero deps) at `/home/workspace/amml/data/amml.db`
+  - Tables: markets, staff, devices, attendance, daily_summary, audit_log
+  - In-memory TTL cache with `getCached()`/`setCache()`/`invalidateCache()`
+  - Cache TTL: 30s for lists, 10s for attendance, 15s for summaries
+  - Auto-seeds on first run (markets, 10 staff, 5 devices)
+- **Phase 3 (in progress):** React frontend calls `/api/amml/*` → SQLite backend
+- **Phase 4 (future):** PostgreSQL migration for production multi-instance deployment
 
 ### Role-Based Access Control
 Five roles defined in `ROLE_CONFIG`:

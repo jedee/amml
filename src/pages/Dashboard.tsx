@@ -5,6 +5,9 @@ import React, { useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import GateKeeper from '../components/GateKeeper';
+import GhostWatch from '../components/GhostWatch';
+import MarketPulse from '../components/MarketPulse';
 
 function StatCard({ value, label, accent }: { value: string | number; label: string; accent: string }) {
   return (
@@ -55,6 +58,7 @@ export default function Dashboard() {
           <p>{user?.name} · {dateLabel}</p>
         </div>
         <div className="page-header-r">
+          <GateKeeper />
           <button className="btn btn-outline btn-sm">📊 Full Report</button>
           <button className="btn btn-blue btn-sm">🕐 Attendance</button>
         </div>
@@ -68,6 +72,12 @@ export default function Dashboard() {
         <KpiCard val={kpis.onTime} label="On Time" icon="✅" accent="#003C78" />
         <KpiCard val={kpis.late} label="Late Arrivals" icon="⚠️" accent="#E8821A" />
         <KpiCard val={kpis.absent} label="Absent" icon="❌" accent="#C0392B" />
+      </div>
+
+      {/* Agent Panels */}
+      <div className="agent-strip">
+        <Card><CardContent className="p-4"><GhostWatch /></CardContent></Card>
+        <Card><CardContent className="p-4"><MarketPulse /></CardContent></Card>
       </div>
 
       {/* Stats Strip */}
