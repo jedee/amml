@@ -1,12 +1,13 @@
+import { Database } from "bun:sqlite";
+
 // ─────────────────────────────────────────────────────────────
-//  AMML — Bun SQLite Database Layer
+//  AMML — Bun SQLite Database Layer (Primary, Zo)
 //  Uses bun:sqlite (built-in, zero dependencies)
 // ─────────────────────────────────────────────────────────────
-import { Database } from "bun:sqlite";
 
 const DB_PATH = "/home/workspace/amml/data/amml.db";
 
-// ── In-memory TTL cache (read-heavy优化) ───────────────────
+// ── In-memory TTL cache (read-heavy optimization) ───────────
 interface CacheEntry { data: unknown; expiry: number; }
 const cache = new Map<string, CacheEntry>();
 const DEFAULT_TTL = 30_000; // 30 seconds
@@ -80,17 +81,17 @@ function migrate(db: Database): void {
     );
 
     CREATE TABLE IF NOT EXISTS attendance (
-      id        TEXT PRIMARY KEY,
-      staff_id   TEXT NOT NULL,
-      staff_name TEXT,
-      market     TEXT,
-      dept       TEXT,
-      date       TEXT NOT NULL,
-      clock_in   TEXT,
-      clock_out  TEXT,
-      device     TEXT,
-      late       INTEGER DEFAULT 0,
-      duration   INTEGER,
+      id          TEXT PRIMARY KEY,
+      staff_id    TEXT NOT NULL,
+      staff_name  TEXT,
+      market      TEXT,
+      dept        TEXT,
+      date        TEXT NOT NULL,
+      clock_in    TEXT,
+      clock_out   TEXT,
+      device      TEXT,
+      late        INTEGER DEFAULT 0,
+      duration    INTEGER,
       FOREIGN KEY (staff_id) REFERENCES staff(id)
     );
 
@@ -114,6 +115,11 @@ function migrate(db: Database): void {
       detail    TEXT,
       timestamp TEXT
     );
+
+    CREATE INDEX IF NOT EXISTS idx_att_staff_id  ON attendance(staff_id);
+    CREATE INDEX IF NOT EXISTS idx_att_date      ON attendance(date);
+    CREATE INDEX IF NOT EXISTS idx_att_staff_date ON attendance(staff_id, date);
+    CREATE INDEX IF NOT EXISTS idx_devices_market ON devices(market);
   `);
 
   // Seed if empty
@@ -127,7 +133,7 @@ function seedDatabase(db: Database): void {
   const defaultMarkets = [
     ["m0","Head Office","FCT Administration HQ","Onya Ojiji",50,"Mon–Fri",1,"FCT Administration Headquarters"],
     ["m1","Gudu Market","Gudu, FCT Abuja","Chibuzor Udekwu",150,"Mon–Sat",1,"Busy residential market"],
-    ["m2","Wuse Market","Wuse Zone 5, FCT Abuja","Tolani Ofulue",200,"Mon–Sat",1,"Largest markets in central Abuja"],
+    ["m2","Wuse Market","Wuse Zone 5, FCT Abuja","Tolani Ofulue",200,"Mon–Sat",1,"Largest market in central Abuja"],
     ["m3","Kado Market","Kado, FCT Abuja","Daodu Susan",120,"Mon–Sat",1,"Vibrant market serving Kado Estate"],
     ["m4","Karimo Market","Karimo, FCT Abuja","Ukpabia Michael Uzoma",100,"Mon–Sat",1,"Community market"],
     ["m5","Kugbo International Market","Kugbo, FCT Abuja","Zamani Rose Thomas",300,"Daily",1,"Major international trade hub"],
@@ -142,7 +148,6 @@ function seedDatabase(db: Database): void {
   const insertMarket = db.prepare("INSERT INTO markets VALUES (?,?,?,?,?,?,?,?)");
   for (const m of defaultMarkets) insertMarket.run(...m);
 
-  // Staff — 46 records (abbreviated; real data in src/data/staff.ts)
   const defaultStaff = [
     ["AMML-001","Onya","Ojiji","Administration","Head Office","08034561234","Managing Director",350000,1,"MD"],
     ["AMML-002","Jedidiah","Ojeh","Administration","Head Office","08098765432","Super Admin",300000,1,"SUPERADMIN"],
@@ -158,7 +163,6 @@ function seedDatabase(db: Database): void {
   const insertStaff = db.prepare("INSERT INTO staff VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
   for (const s of defaultStaff) insertStaff.run(...s);
 
-  // Devices
   const defaultDevices = [
     ["d1","Main Gate AL325","Realand AL325","Gudu Market","SN-AL325-GD-001","Main Entrance",1,"2 min ago",28],
     ["d2","Main Gate AL325","Realand AL325","Wuse Market","SN-AL325-WS-001","Main Entrance",1,"1 min ago",47],
@@ -172,7 +176,7 @@ function seedDatabase(db: Database): void {
   console.log("[amml-db] Database seeded");
 }
 
-// ── Audit helper ────────────────────────────────────────────
+// ── Audit helper ───────────────────────────────────────────
 export function audit(user: string, action: string, detail: string): void {
   try {
     const db = getDb();

@@ -7,6 +7,9 @@ import { useApp } from '../contexts/AppContext';
 import { useStaffImport } from '../hooks/useStaffImport';
 import { apiAddStaff, apiUpdateStaff } from '../api/amml';
 import type { AuthLevel, Staff } from '../types/models';
+import {
+  UserPlus, X, CheckCircle, AlertTriangle, Upload, FileSpreadsheet, User
+} from 'lucide-react';
 
 // ── Add-Staff Modal ─────────────────────────────────────────
 interface StaffFormData {
@@ -95,10 +98,10 @@ function AddStaffModal({ onClose }: { onClose: () => void }) {
         {/* Modal Header */}
         <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>👤 Add New Staff</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}><User /> Add New Staff</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>Manually enroll a single staff member</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text3)', padding: 4, lineHeight: 1 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text3)', padding: 4, lineHeight: 1 }}><X /></button>
         </div>
 
         <form onSubmit={handleSubmit}>

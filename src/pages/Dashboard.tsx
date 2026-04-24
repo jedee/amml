@@ -8,6 +8,10 @@ import { Badge } from '../components/ui/badge';
 import GateKeeper from '../components/GateKeeper';
 import GhostWatch from '../components/GhostWatch';
 import MarketPulse from '../components/MarketPulse';
+import {
+  Users, Store, Smartphone, CheckCircle, AlertTriangle, XCircle,
+  BarChart3, Clock, FilePlus, Tablet, ClipboardList, UserPlus
+} from 'lucide-react';
 
 function StatCard({ value, label, accent }: { value: string | number; label: string; accent: string }) {
   return (
@@ -59,19 +63,19 @@ export default function Dashboard() {
         </div>
         <div className="page-header-r">
           <GateKeeper />
-          <button className="btn btn-outline btn-sm">📊 Full Report</button>
-          <button className="btn btn-blue btn-sm">🕐 Attendance</button>
+          <button className="btn btn-outline btn-sm"><BarChart3 /> Full Report</button>
+          <button className="btn btn-blue btn-sm"><Clock /> Attendance</button>
         </div>
       </div>
 
       {/* KPI Grid */}
       <div className="kpi-grid">
-        <KpiCard val={kpis.activeStaff} label="Active Staff" icon="👥" accent="#0064B4" />
-        <KpiCard val={kpis.marketsCount} label="Markets" icon="🏪" accent="#DC6400" />
-        <KpiCard val={kpis.onlineDevices} label="Online Devices" icon="📱" accent="#288C28" />
-        <KpiCard val={kpis.onTime} label="On Time" icon="✅" accent="#003C78" />
-        <KpiCard val={kpis.late} label="Late Arrivals" icon="⚠️" accent="#E8821A" />
-        <KpiCard val={kpis.absent} label="Absent" icon="❌" accent="#C0392B" />
+        <KpiCard val={kpis.activeStaff} label="Active Staff" icon={<Users />} accent="#0064B4" />
+        <KpiCard val={kpis.marketsCount} label="Markets" icon={<Store />} accent="#DC6400" />
+        <KpiCard val={kpis.onlineDevices} label="Online Devices" icon={<Smartphone />} accent="#288C28" />
+        <KpiCard val={kpis.onTime} label="On Time" icon={<CheckCircle />} accent="#003C78" />
+        <KpiCard val={kpis.late} label="Late Arrivals" icon={<AlertTriangle />} accent="#E8821A" />
+        <KpiCard val={kpis.absent} label="Absent" icon={<XCircle />} accent="#C0392B" />
       </div>
 
       {/* Agent Panels */}
@@ -99,7 +103,7 @@ export default function Dashboard() {
         <CardContent>
           {todayRecs.length === 0 ? (
             <div className="empty-state">
-              <div className="es-icon">🕐</div>
+              <div className="es-icon"><Clock /></div>
               <div className="es-title">No attendance records yet</div>
               <p className="es-sub">Staff clock in using biometric devices or the Attendance page.</p>
             </div>
@@ -143,10 +147,10 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="mf">
-            <button className="btn btn-outline btn-sm">➕ Add Staff</button>
-            <button className="btn btn-outline btn-sm">📱 Register Device</button>
-            <button className="btn btn-outline btn-sm">📊 View Reports</button>
-            <button className="btn btn-blue btn-sm">🕐 Record Attendance</button>
+            <button className="btn btn-outline btn-sm"><UserPlus /> Add Staff</button>
+            <button className="btn btn-outline btn-sm"><Tablet /> Register Device</button>
+            <button className="btn btn-outline btn-sm"><ClipboardList /> View Reports</button>
+            <button className="btn btn-blue btn-sm"><Clock /> Record Attendance</button>
           </div>
         </CardContent>
       </Card>

@@ -10,6 +10,12 @@ import { STAFF } from '../data/staff';
 import { DEVICES } from '../data/devices';
 import { ROLE_CONFIG } from '../data/roles';
 import { SEED_ATTENDANCE } from '../data/attendance';
+import { apiClient, setApiSecret, clearApiSecret } from '../api/client';
+
+// ── Dev fallback secret (read from env; not the real production secret) ──
+const DEV_FALLBACK_SECRET = (typeof process !== 'undefined' && process.env?.AMML_API_SECRET)
+  ? String(process.env.AMML_API_SECRET)
+  : 'dev-secret-change-me';
 
 // ── Initial State ───────────────────────────────────────────
 // Reads localStorage SYNCHRONOUSLY so the FIRST render gets the right phase
@@ -99,9 +105,11 @@ type Action =
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOGIN':
+      setApiSecret(DEV_FALLBACK_SECRET);
       return { ...state, user: action.payload, phase: 'app' };
 
     case 'LOGOUT':
+      clearApiSecret();
       return { ...defaultState, phase: 'splash',
         staff: state.staff, markets: state.markets, devices: state.devices,
         att: state.att, settings: state.settings, zkMap: state.zkMap };
@@ -303,10 +311,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadLiveData() {
       const [mr, sr, dr, ar] = await Promise.allSettled([
-        fetch('/api/amml/markets').then(r => r.json()).catch(() => null),
-        fetch('/api/amml/staff').then(r => r.json()).catch(() => null),
-        fetch('/api/amml/devices').then(r => r.json()).catch(() => null),
-        fetch('/api/amml/attendance').then(r => r.json()).catch(() => null),
+        apiClient<{ markets: Market[] }>('/markets').catch(() => null),
+        apiClient<{ staff: Staff[] }>('/staff').catch(() => null),
+        apiClient<{ devices: Device[] }>('/devices').catch(() => null),
+        apiClient<{ attendance: Attendance[] }>('/attendance').catch(() => null),
       ]);
 
       const markets = mr.status === 'fulfilled' && mr.value?.markets ? mr.value.markets : [...MARKETS];

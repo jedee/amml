@@ -6,6 +6,11 @@ import type { Device, DeviceType } from "../types/models";
 import { useApp } from "../contexts/AppContext";
 import { apiAddDevice, apiDeleteDevice, apiUpdateDevice } from '../api/amml';
 import { useState } from "react";
+import {
+  Smartphone, WifiOff, Upload, Power, ChevronUp, ChevronDown,
+  Monitor, Clock, CheckCircle, AlertCircle, FileSpreadsheet,
+  Plus, Trash2, Edit3, Save, X, ArrowRightCircle, Users, Activity
+} from "lucide-react";
 
 interface ZKRec { zkId: string; date: string; time: string; inOut: "In"|"Out"; staffId?: string; ammlId?: string }
 interface BTRec { name: string; date: string; time: string; deviceName: string; matchedId?: string; score?: number }
@@ -116,7 +121,7 @@ function DeviceCard({ dev, onDelete, onImport }: { dev: Device; onDelete: (id: s
       {/* Always-visible header */}
       <div style={{ padding: open ? 0 : 18, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ width: 44, height: 44, borderRadius: 10, background: dev.active ? "rgba(40,140,40,.1)" : "var(--surface3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{dev.active ? "📱" : "📴"}</div>
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: dev.active ? "rgba(40,140,40,.1)" : "var(--surface3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{dev.active ? <Smartphone /> : <WifiOff />}</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14 }}>{dev.name}</div>
             <div style={{ fontSize: 11.5, color: "var(--text3)" }}>{dev.market}</div>
@@ -134,10 +139,10 @@ function DeviceCard({ dev, onDelete, onImport }: { dev: Device; onDelete: (id: s
       {/* Always-visible action row */}
       <div style={{ padding: "0 18px 14px", display: "flex", gap: 7, flexWrap: "wrap", background: "var(--surface2)", borderTop: "1px solid var(--border)" }}>
         <button onClick={() => setOpen(!open)} style={{ flex: "1 1 calc(50% - 4px)", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", background: open ? "var(--surface3)" : "var(--surface)", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit", color: "var(--text2)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          {open ? <span>▲ Close</span> : <><span>📥</span> Import Logs</>}
+          {open ? <><ChevronUp size={13} /> Close</> : <><Upload size={13} /> Import Logs</>}
         </button>
-        <button onClick={toggle} style={{ flex: "1 1 calc(50% - 4px)", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "none", background: dev.active ? "#C0392B" : "var(--green-logo)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-          {dev.active ? "⏸ Deactivate" : "▶ Activate"}
+        <button onClick={toggle} style={{ flex: "1 1 calc(50% - 4px)", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "none", background: dev.active ? "#C0392B" : "var(--green-logo)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          {dev.active ? <><WifiOff size={13} /> Deactivate</> : <><Power size={13} /> Activate</>}
         </button>
       </div>
 
@@ -174,7 +179,7 @@ function DeviceCard({ dev, onDelete, onImport }: { dev: Device; onDelete: (id: s
           <div style={{ padding: "14px", background: "var(--surface2)" }}>
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: "var(--text2)" }}>📂 Import CSV from {dev.name}</div>
             <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "16px", border: "2px dashed var(--border)", borderRadius: "var(--r-sm)", cursor: "pointer", background: "var(--surface)", marginBottom: 10 }}>
-              <span style={{ fontSize: 20, marginBottom: 6 }}>📄</span>
+              <span style={{ fontSize: 20, marginBottom: 6 }}><FileSpreadsheet /></span>
               <span style={{ fontWeight: 600, fontSize: 12 }}>{zkFile ? zkFile.name : `Select CSV from ${dev.name}`}</span>
               <input type="file" accept=".csv" onChange={onZKChange} style={{ display: "none" }} />
             </label>
@@ -300,7 +305,7 @@ function BiometricImport() {
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>MARKET</label><select value={zkMkt} onChange={e => setZkMkt(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", fontFamily: "inherit", fontSize: 13 }}><option value="">Auto-detect</option>{markets.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}</select></div>
           </div>
           <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: "var(--r-sm)", cursor: "pointer", background: "var(--surface2)", marginBottom: 12 }}>
-            <span style={{ fontSize: 24, marginBottom: 8 }}>📂</span>
+            <span style={{ fontSize: 24, marginBottom: 8 }}><FileSpreadsheet /></span>
             <span style={{ fontWeight: 600, fontSize: 13 }}>{zkFile ? zkFile.name : "Click to select AL325 CSV"}</span>
             <input type="file" accept=".csv" onChange={onZKChange} style={{ display: "none" }} />
           </label>
@@ -321,7 +326,7 @@ function BiometricImport() {
         <div>
           <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text3)", display: "block", marginBottom: 4 }}>DEVICE NAME</label><input value={btDev} onChange={e => setBtDev(e.target.value)} style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-sm)", border: "1.5px solid var(--border)", fontFamily: "inherit", fontSize: 13 }} /></div>
           <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", border: "2px dashed var(--border)", borderRadius: "var(--r-sm)", cursor: "pointer", background: "var(--surface2)", marginBottom: 12 }}>
-            <span style={{ fontSize: 24, marginBottom: 8 }}>📂</span>
+            <span style={{ fontSize: 24, marginBottom: 8 }}><FileSpreadsheet /></span>
             <span style={{ fontWeight: 600, fontSize: 13 }}>{btFile ? btFile.name : "Click to select AL321 CSV"}</span>
             <input type="file" accept=".csv" onChange={onBTChange} style={{ display: "none" }} />
           </label>
@@ -342,7 +347,7 @@ function BiometricImport() {
       <div style={{ marginTop: 14, borderTop: '1.5px solid var(--border)', paddingTop: 14 }}>
         <button onClick={() => setOpen(!open)} style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--r-sm)', border: '1.5px solid var(--border)', background: open ? 'var(--surface3)' : 'var(--surface2)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: 'var(--text2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>🔗 ZK ID → AMML ID Mapping ({entries.length} entries)</span>
-          <span>{open ? '▲' : '▼'}</span>
+          <span>{open ? <ChevronUp /> : <ChevronDown />}</span>
         </button>
         {open && (
           <div style={{ marginTop: 12 }}>

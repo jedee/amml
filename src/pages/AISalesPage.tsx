@@ -7,7 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  sources?: number;
+  sources?: string[];
 }
 
 const RAG_ENDPOINT = 'https://jedi.zo.space/api/amml-rag';
@@ -25,9 +25,7 @@ export default function AISalesPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `👋 I'm AMML Assistant — I can answer questions about attendance policy, payroll, leave, market operations, HR compliance, and disciplinary procedures.
-
-Ask me anything about how AMML works.`,
+      content: `👋 I'm AMML Assistant — I can answer questions about attendance policy, payroll, leave, market operations, HR compliance, and disciplinary procedures.\n\nAsk me anything about how AMML works.`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -40,10 +38,10 @@ Ask me anything about how AMML works.`,
     fetch(RAG_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: 'test' }),
+      body: JSON.stringify({ query: 'test' }),
     })
       .then(r => r.json())
-      .then(data => setApiConfigured(!data.error || data.error !== 'RAG is not configured'))
+      .then(data => setApiConfigured(!data.error))
       .catch(() => setApiConfigured(false));
   }, []);
 
@@ -162,7 +160,7 @@ Ask me anything about how AMML works.`,
                 }}
               >
                 {msg.content}
-                {msg.sources !== undefined && msg.sources > 0 && (
+                {msg.sources !== undefined && msg.sources.length > 0 && (
                   <div
                     style={{
                       marginTop: 6,
@@ -171,7 +169,7 @@ Ask me anything about how AMML works.`,
                       fontStyle: 'italic',
                     }}
                   >
-                    📚 {msg.sources} source{msg.sources > 1 ? 's' : ''} retrieved
+                    📚 {msg.sources.length} source{msg.sources.length > 1 ? 's' : ''} retrieved
                   </div>
                 )}
               </div>
@@ -285,7 +283,7 @@ Ask me anything about how AMML works.`,
               color: '#C0392B',
             }}
           >
-            ⚠️ RAG is not configured. Set <code>OPENAI_API_KEY</code> in Settings &gt; Advanced to enable the knowledge base.
+            ⚠️ RAG is not configured. Set <code>GROQ_API_KEY</code> in Settings &gt; Advanced to enable the knowledge base.
           </div>
         )}
       </div>

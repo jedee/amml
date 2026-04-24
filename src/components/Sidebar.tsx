@@ -3,6 +3,25 @@
 // ─────────────────────────────────────────────────────────────
 import React from 'react';
 import { useApp } from '../contexts/AppContext';
+import {
+  LayoutDashboard, Store, Clock, Users, Smartphone,
+  ClipboardList, Banknote, Bell, ScrollText, Crown, Bot, Settings
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, React.ReactNode> = {
+  '📊': <LayoutDashboard size={16} />,
+  '🏪': <Store size={16} />,
+  '🕐': <Clock size={16} />,
+  '👥': <Users size={16} />,
+  '📱': <Smartphone size={16} />,
+  '📋': <ClipboardList size={16} />,
+  '💵': <Banknote size={16} />,
+  '🔔': <Bell size={16} />,
+  '📜': <ScrollText size={16} />,
+  '👑': <Crown size={16} />,
+  '🤖': <Bot size={16} />,
+  '⚙️': <Settings size={16} />,
+};
 
 interface Props { currentPage: string; onNavigate: (page: string) => void; }
 
@@ -35,7 +54,7 @@ export default function Sidebar({ currentPage, onNavigate }: Props) {
           {item.id === 'payroll' && <div className="nav-section">Finance</div>}
           {item.id === 'reports' && <div className="nav-section">Insights</div>}
           <button className={'nav-item' + (currentPage === item.id ? ' active' : '')} onClick={() => onNavigate(item.id)}>
-            <span className="nav-item-icon">{item.icon}</span>
+            <span className="nav-item-icon">{ICON_MAP[item.icon]}</span>
             <span>{item.label}</span>
             {item.id === 'alerts' && currentRole?.label && <span className="nav-badge">3</span>}
           </button>

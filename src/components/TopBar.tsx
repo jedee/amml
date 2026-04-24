@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { MapPin, Bell } from 'lucide-react';
 
 const ROLE_COLORS: Record<string, string> = {
   SUPERADMIN: '#4A148C', MD: '#003C78', MANAGER: '#0064B4',
@@ -42,7 +43,7 @@ export default function TopBar() {
 
       {/* Market Selector */}
       <div className="market-select">
-        <span>📍</span>
+        <span><MapPin /></span>
         <select
           value={state.marketFilter}
           onChange={e => dispatch({ type: 'SET_MARKET_FILTER', payload: e.target.value })}
@@ -57,7 +58,7 @@ export default function TopBar() {
 
       {/* Notifications */}
       <div className="topbar-notif" title="Notifications">
-        🔔
+        <Bell />
         {state.alerts.length > 0 && <div className="topbar-notif-dot" />}
       </div>
 

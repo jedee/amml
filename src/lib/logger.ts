@@ -82,6 +82,19 @@ export const logger = {
       ip,
     });
   },
+
+  // Slow-query log — fires when a DB call exceeds SLOW_QUERY_THRESHOLD_MS
+  slowQuery(label: string, elapsed_ms: number, query?: string) {
+    write(ACCESS_LOG, {
+      ts: new Date().toISOString(),
+      level: "WARN",
+      service: "amml-api",
+      action: "SLOW_QUERY",
+      detail: label,
+      latency_ms: Math.round(elapsed_ms),
+      error: query ? `query: ${query.slice(0, 120)}` : undefined,
+    });
+  },
 };
 
 // ── Timing middleware helper ──────────────────────────────────
